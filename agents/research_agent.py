@@ -7,3 +7,4 @@ class ResearchAgent:
     def run(self, query: str):
         # TODO: implement research logic
         pass
+print()
