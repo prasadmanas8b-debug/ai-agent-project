@@ -82,7 +82,7 @@ def _create_llm() -> ChatGroq:
     """Returns a Groq LLM instance (llama3-8b — fast & free)."""
     return ChatGroq(
         api_key=GROQ_API_KEY,
-        model="llama3-8b-8192",
+        model="llama-3.1-8b-instant",
         temperature=0.2,
         max_tokens=2048,
     )
