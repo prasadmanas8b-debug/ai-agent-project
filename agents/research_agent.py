@@ -10,7 +10,7 @@ How to run:
   python agents/research_agent.py
   streamlit run agents/research_agent.py
 """
-
+import time
 import os
 import sys
 from dotenv import load_dotenv
@@ -82,7 +82,7 @@ def _create_llm() -> ChatGroq:
     """Returns a Groq LLM instance (llama3-8b — fast & free)."""
     return ChatGroq(
         api_key=GROQ_API_KEY,
-        model="llama-3.1-8b-instant",
+        model="llama-3.3-70b-versatile",
         temperature=0.2,
         max_tokens=2048,
     )
@@ -159,6 +159,8 @@ Final Answer: [complete markdown research report]
 
 Important rules:
 - Always search at least 2 times with different queries before writing the report
+- ALWAYS follow the exact Thought/Action/Action Input/Observation format — never skip it
+- Never write the Final Answer until you have searched at least twice
 - Use specific search queries, not just the topic title
 - Write the report in clean markdown format
 - If search returns no results, try a different query
@@ -212,14 +214,46 @@ def run_research_agent(topic: str) -> dict:
         agent=agent,
         tools=tools,
         verbose=True,              # shows every step in terminal
-        max_iterations=8,          # max search rounds
+        max_iterations=8,
+        max_execution_time=60,
+        max_tokens=1024,
+    # ↑ stops after 30 seconds no matter what          # max search rounds
         handle_parsing_errors=True,
     )
 
+    # AFTER — paste this instead ✅
     print("🤖  Agent is working...\n")
-    result = executor.invoke({"input": topic})
-    report = result.get("output", "⚠️ No report was generated.")
 
+    # ── Execute with retry on rate limit ──────────────────────
+    max_retries = 3
+    result = None
+
+    for attempt in range(max_retries):
+        try:
+            result = executor.invoke({"input": topic})
+            break  # success — exit retry loop
+
+        except Exception as e:
+            error_str = str(e)
+
+            if "rate_limit_exceeded" in error_str or "429" in error_str:
+                wait_time = 30 * (attempt + 1)
+                print(f"\n⏳ Rate limit hit. Waiting {wait_time}s before retry {attempt+1}/{max_retries}...")
+                time.sleep(wait_time)
+                continue  # try again
+
+            else:
+                raise e  # different error — don't retry
+
+    if result is None:
+        print("❌ All retries failed due to rate limit.")
+        return {
+            "topic": topic,
+            "report": "",
+            "saved_to": ""
+        }
+
+    report = result.get("output", "⚠️ No report was generated.")
     # 4. Save the report
     if SAVER_READY:
         saved_to = save_report(topic, report)

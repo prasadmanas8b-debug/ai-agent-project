@@ -33,7 +33,7 @@ def save_report(topic: str, content: str, output_dir: str = "outputs") -> str:
 
     # ── Build a clean filename from the topic ────────────────────────────────
     safe_name = _make_safe_filename(topic)
-    filename  = f"report_{safe_name}.md"
+    filename = f"report_{safe_name}.md"
     filepath  = os.path.join(output_dir, filename)
 
     # ── Build the full markdown file content ─────────────────────────────────
@@ -119,6 +119,38 @@ def _build_markdown(topic: str, content: str, timestamp: str) -> str:
 *Report generated automatically by AI Research Agent — Phase 1*
 """
 
+# Additional Changes for Writer agent start here 
+import os  
+# os = operating system module
+# lets us create folders, build file paths, etc.
+
+def save_to_file(content: str, filename: str = "output.txt", folder: str = "outputs") -> str:
+    # content   → the text we want to save
+    # filename  → what to name the file (default: output.txt)
+    # folder    → which folder to save in (default: outputs/)
+    # -> str    → this function returns the filepath as a string
+
+    os.makedirs(folder, exist_ok=True)
+    # makedirs  → creates the folder if it doesn't exist
+    # exist_ok  → if folder already exists, don't throw an error, just continue
+
+    filepath = os.path.join(folder, filename)
+    # os.path.join → builds the correct path for any OS
+    # Result example: "outputs/report_langchain.md"
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+    # open the file in write mode ("w")
+    # encoding="utf-8" → supports all characters including symbols
+    # f.write → actually writes the content into the file
+
+    print(f"[File Saver] ✅ Saved to: {filepath}")
+    # just a status message so you know it worked
+
+    return filepath
+    # return the path so the calling agent knows where the file was saved
+# Additional changes for writer changes ends here
+    
 
 # ── Quick test ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":

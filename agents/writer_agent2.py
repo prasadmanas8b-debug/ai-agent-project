@@ -18,8 +18,65 @@ import os
 load_dotenv()
 # Call this BEFORE using any API key
 # Without this, os.getenv("GROQ_API_KEY") returns None
+def _detect_format(topic: str) -> str:
+    
+    """
+    Detects what kind of output format suits the query.
+    Returns a format instruction string.
+    """
+    topic_lower = topic.lower()
 
+    # Comparison queries
+    if any(word in topic_lower for word in ["vs", "versus", "compare", "difference between", "better"]):
+        return """
+Use a COMPARISON TABLE format:
+- Start with a brief ## Overview (2 sentences)
+- Create a markdown table comparing the two subjects
+- Add ## Key Differences section with bullet points
+- End with ## Verdict — which is better and why
+"""
+
+    # Timeline / history queries
+    elif any(word in topic_lower for word in ["history", "timeline", "evolution", "when did", "year"]):
+        return """
+Use a TIMELINE format:
+- Start with ## Overview
+- Create a chronological ## Timeline section with years as headers
+- Add ## Impact section explaining significance
+- End with ## Conclusion
+"""
+
+    # Person / who queries
+    elif any(word in topic_lower for word in ["who is", "who was", "who became", "cm", "president", "ceo", "founder"]):
+        return """
+Use a PERSON PROFILE format:
+- Start with ## Overview (who they are, current role)
+- Add ## Background (education, early career)
+- Add ## Key Achievements as bullet points
+- End with ## Current Role & Responsibilities
+"""
+
+    # Statistics / market queries
+    elif any(word in topic_lower for word in ["market", "size", "revenue", "growth", "statistics", "data", "numbers"]):
+        return """
+Use a DATA & STATS format:
+- Start with ## Overview
+- Add ## Key Statistics with a markdown table of numbers
+- Add ## Market Breakdown section
+- End with ## Future Outlook
+"""
+
+    # Default format
+    else:
+        return """
+Use this standard format:
+- ## Overview
+- ## Key Findings (bullet points)
+- ## Detailed Analysis
+- ## Conclusion
+"""
 def run_writer_agent(research_notes: str, topic: str) -> str:
+    format_instructions = _detect_format(topic)
     # research_notes → the text your research agent returned
     # topic          → the original topic (used for naming the file)
     # -> str         → returns the final report as a string
@@ -51,30 +108,18 @@ def run_writer_agent(research_notes: str, topic: str) -> str:
     )
 
     # ── SYSTEM PROMPT ─────────────────────────────────────────
-    system_prompt = """
+    system_prompt = f"""
 You are a professional technical report writer.
+Your job is to take raw research notes and write a clean report.
 
-Your job is to take raw research notes and transform them into a 
-clean, well-structured markdown report.
-
-Follow these rules strictly:
-1. Always write these 4 sections in order:
-   - ## Overview
-   - ## Key Findings
-   - ## Detailed Analysis
-   - ## Conclusion
-
-2. Use markdown formatting — headings, bullet points, bold text
-
-3. Remove duplicate or repeated information from the notes
-
-4. Keep a professional, neutral tone throughout
-
-5. DO NOT search the web — only use what is in the notes given to you
-
-6. DO NOT invent or guess any facts — only use what you are given
-
-7. Make the report easy to read for a student or professional
+{format_instructions}
+note: try to add a header and footer to the output for better clerification and better view and make it more attractive 
+Rules:
+1. Use markdown formatting throughout
+2. Remove duplicate information
+3. Professional, neutral tone
+4. DO NOT search the web — only use the notes given
+5. DO NOT invent facts — only use what you are given
 """
     # Why a strict system prompt?
     # The LLM is the same model as your research agent
