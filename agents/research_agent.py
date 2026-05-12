@@ -79,7 +79,7 @@ def _builtin_save(topic: str, content: str) -> str:
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _create_llm() -> ChatGroq:
-    """Returns a Groq LLM instance (llama3-8b — fast & free)."""
+    """Returns a Groq LLM instance (llama3-70b — fast & free)."""
     return ChatGroq(
         api_key=GROQ_API_KEY,
         model="llama-3.3-70b-versatile",

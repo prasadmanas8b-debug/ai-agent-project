@@ -4,7 +4,7 @@
 from agents.research_agent import run_research_agent
 # imports your Phase 1 research agent function
 
-from agents.writer_agent import run_writer_agent
+from agents.writer_agent2 import run_writer_agent
 # imports the new writer agent function
 
 def run_pipeline(topic: str) -> str:
