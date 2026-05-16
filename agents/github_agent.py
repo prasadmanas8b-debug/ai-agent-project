@@ -3,6 +3,7 @@ import json
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 
 # Import all tools from github_tools
 from tools.github_tools import (
@@ -18,10 +19,12 @@ from tools.github_tools import (
 load_dotenv()
 
 # ── LLM setup ────────────────────────────────────────────────────────────────
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
+
+
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
     temperature=0,
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 
 # ── System prompt ─────────────────────────────────────────────────────────────

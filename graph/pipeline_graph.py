@@ -23,8 +23,7 @@ def writer_node(state: AgentState) -> AgentState:
     return { **state, 'final_report': report }
 
 def github_node(state: AgentState) -> AgentState:
-    result = run_github_agent(state['task'], state.get('final_report', ''))
-    return { **state, 'github_result': result }
+    return run_github_agent(state)
 
 # ── Routing function ───────────────────────────────────────────────
 def route(state: AgentState) -> str:

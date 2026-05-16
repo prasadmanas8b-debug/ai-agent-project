@@ -60,7 +60,7 @@ def main():
         # [:800] preview — same as Phase 2
 
     if result.get('github_result'):
-        print(f"GitHub: {result['github_result']}")
+        print("✅ GitHub action completed successfully.")
     # conditional prints — not every task produces every output
     # a GitHub-only task won't have a final_report
     # a research-only task won't have a github_result

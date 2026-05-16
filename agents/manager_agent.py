@@ -44,10 +44,12 @@ Your ONLY job is to read the task and current state, then decide which agent
 should run next.
 
 Decision rules (apply in order, top to bottom):
-  1. If the task needs research AND research_notes is empty        → return: research
-  2. If research_notes exists AND final_report is empty            → return: writer
-  3. If the task mentions GitHub / saving / committing / push      → return: github
-  4. If all required work is complete                              → return: FINISH
+  1. If github_result exists (is not empty)                                    → return: FINISH
+  2. If final_report exists AND task mentions github/saving/commit/push        → return: github
+  3. If the task needs research AND research_notes is empty                    → return: research
+  4. If research_notes exists AND final_report is empty                        → return: writer
+  5. If the task mentions github/listing/files AND github_result is empty      → return: github
+  6. If all required work is complete                                           → return: FINISH
 
 CRITICAL RULES:
   - Respond with EXACTLY ONE word, nothing else.
