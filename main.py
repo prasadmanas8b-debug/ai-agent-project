@@ -1,93 +1,74 @@
 # main.py
-# This is the pipeline runner — the file YOU run every time
+# Phase 3 entry point — replaces hardcoded pipeline with graph.invoke()
 
-from agents.research_agent import run_research_agent
-# imports your Phase 1 research agent function
+from graph.pipeline_graph import build_graph
+# imports the compiled LangGraph pipeline
+# this single import replaces all individual agent imports from Phase 2
+# the graph internally handles research, writer, and github agents
 
-from agents.writer_agent2 import run_writer_agent
-# imports the new writer agent function
+def main():
 
-def run_pipeline(topic: str) -> str:
-    # topic  → the subject the user wants to research
-    # -> str → returns the final report text
+    graph = build_graph()
+    # build_graph() wires all 4 nodes together and compiles them
+    # this is where LangGraph validates the graph — missing edges, etc.
+    # compile() is called inside build_graph(), so what you get back
+    # is already a runnable object, not a builder
 
-    print(f"\n{'='*50}")
-    print(f"  PIPELINE STARTED")
-    print(f"  Topic: {topic}")
-    print(f"{'='*50}\n")
-    # just visual separators so terminal output is readable
+    print('\n' + '='*50)
+    print('  AI Agent System — Phase 3')
+    print('='*50)
+    print('Examples:')
+    print('  Research quantum computing')
+    print('  List files in agents folder')
+    print('  Research AI trends and save to GitHub')
+    print('='*50 + '\n')
 
-   # ── STAGE 1: RESEARCH ─────────────────────────────────────
-    print("[ STAGE 1 ] 🔍 Research Agent starting...\n")
+    user_input = input('What do you want to do? ').strip()
+    # Phase 2 asked: "Enter a topic to research"
+    # Phase 3 asks open-ended natural language — the Supervisor figures out what to do
 
-    research_result = run_research_agent(topic)
-    research_notes = research_result["report"]
+    if not user_input:
+        print('No input. Exiting.')
+        return
 
-    # ── CLEAN STEP 1: Remove LangChain debug errors ───────────
-    import re
-    research_notes = re.sub(r'Invalid Format:.*?(?=##|\Z)', '', research_notes, flags=re.DOTALL)
+    # ── INITIAL STATE ──────────────────────────────────────────────
+    initial_state = {
+        'task':           user_input,   # the only field with a value
+        'research_notes': '',           # Research Agent will fill this
+        'final_report':   '',           # Writer Agent will fill this
+        'github_result':  '',           # GitHub Agent will fill this
+        'next':           ''            # Supervisor will fill this each loop
+    }
+    # every field must exist even if empty
+    # LangGraph passes this entire dict into every node
+    # missing fields = KeyError when any agent reads state
 
-    # ── CLEAN STEP 2: Remove duplicate lines ──────────────────
-    lines = research_notes.split('\n')
-    seen = []
-    cleaned_lines = []
-    for line in lines:
-        if line.strip() not in seen or line.strip() == '':
-            cleaned_lines.append(line)
-            seen.append(line.strip())
-    research_notes = '\n'.join(cleaned_lines)
+    print('\n[System] Starting graph...\n')
 
-    # ── CLEAN STEP 3: Final trim ───────────────────────────────
-    research_notes = research_notes.strip()
+    result = graph.invoke(initial_state)
+    # this is the ONE line that replaced the entire run_pipeline() function
+    # internally: Supervisor → agent → Supervisor → agent → ... → FINISH
+    # result is the final AgentState dict after the graph exits
 
-# ── SAFETY CHECK ──────────────────────────────────────────
-# Also catch cases where agent returned an error message instead of research
-    failed_keywords = ["iteration limit", "time limit", "agent stopped", "no report"]
-    if not research_notes or any(kw in research_notes.lower() for kw in failed_keywords):
-        print("[ PIPELINE ] ❌ Research agent did not complete. Try again.")
-        return ""
-    print(f"[ STAGE 1 ] 📁 Research saved to: {research_result['saved_to']}")
-    print("\n[ STAGE 1 ] ✅ Research complete.\n")
-    print("-" * 50)
-        # ── STAGE 2: WRITE ────────────────────────────────────────
-    print("\n[ STAGE 2 ] ✍️  Writer Agent starting...\n")
+    # ── RESULTS ───────────────────────────────────────────────────
+    print('\n' + '='*50)
+    print('  DONE')
+    print('='*50)
 
-    final_report = run_writer_agent(
-        research_notes=research_notes,
-        # passes the output of stage 1 directly into stage 2
-        # this is the pipeline connection — output of A → input of B
+    if result.get('final_report'):
+        print(result['final_report'][:800])
+        # [:800] preview — same as Phase 2
 
-        topic=topic
-        # also pass the topic so writer can name the file correctly
-    )
+    if result.get('github_result'):
+        print(f"GitHub: {result['github_result']}")
+    # conditional prints — not every task produces every output
+    # a GitHub-only task won't have a final_report
+    # a research-only task won't have a github_result
+    # printing blindly would show empty strings or crash
 
-    print("\n[ STAGE 2 ] ✅ Report written.\n")
-    print("=" * 50)
-    print("  PIPELINE COMPLETE ✅")
-    print("=" * 50)
 
-    return final_report
-
-# ── ENTRY POINT ───────────────────────────────────────────────
-if __name__ == "__main__":
-    # this block only runs when YOU run: python main.py
-    # it does NOT run when another file imports main.py
-    # this is standard Python — always use this pattern
-
-    topic = input("\nEnter a topic to research: ").strip()
-    # input() → waits for you to type something and press Enter
-    # .strip() → removes accidental spaces
-
-    if topic:
-        report = run_pipeline(topic)
-        
-        print("\n--- REPORT PREVIEW (first 800 chars) ---\n")
-        print(report[:800])
-        # [:800] → prints first 800 characters as a preview
-        # full report is saved in outputs/ folder
-
-        print(f"\n📁 Research notes → outputs/report_{topic.strip().lower().replace(' ', '_')[:60]}.md")
-        print(f"📄 Final report   → outputs/final_report_{topic.strip().lower().replace(' ', '_')[:60]}.md")
-        print("\n✅ Both files saved in outputs/ folder")
-    else:
-        print("No topic entered. Please try again.")
+# ── ENTRY POINT ───────────────────────────────────────────────────
+if __name__ == '__main__':
+    main()
+    # same pattern as Phase 2 — only runs when you do: python main.py
+    # does NOT run when another file imports main.py
