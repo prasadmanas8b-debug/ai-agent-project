@@ -15,7 +15,7 @@ def run_writer_agent(research_notes: str, topic: str) -> str:
         return "Error: Not enough research data to write a report."
 
     llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
         temperature=0.4,
         api_key=os.getenv("GROQ_API_KEY")
     )
