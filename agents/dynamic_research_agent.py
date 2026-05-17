@@ -20,7 +20,7 @@ def _create_tools():
 
 
 tools = _create_tools()
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.4, max_tokens=4096)
+llm = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct", temperature=0.4, max_tokens=4096)
 
 SYSTEM_PROMPT = """You are an expert research analyst, similar to Perplexity AI.
 
