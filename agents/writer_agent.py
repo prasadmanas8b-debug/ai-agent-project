@@ -1,73 +1,69 @@
-# Writer Agent
-# agents/writer_agent.py
-
+"""
+agents/writer_agent.py
+Takes raw research notes and produces a polished markdown report.
+"""
+import os
+from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
-def run_writer_agent(research_notes: str, topic: str) -> str:
+_llm = ChatGroq(
+    model="meta-llama/llama-4-scout-17b-16e-instruct",
+    temperature=0.4,
+    api_key=os.getenv("GROQ_API_KEY"),
+)
 
-    if not research_notes or len(research_notes.strip()) < 50:
-        print("[Writer Agent] ⚠️  Notes too short or empty. Stopping.")
-        return "Error: Not enough research data to write a report."
+_SYSTEM_PROMPT = """
+You are a professional research report writer — like a senior journalist or analyst.
+Take raw research notes and transform them into a clean, structured, engaging markdown report.
 
-    llm = ChatGroq(
-        model="meta-llama/llama-4-scout-17b-16e-instruct",
-        temperature=0.4,
-        api_key=os.getenv("GROQ_API_KEY")
-    )
-
-    system_prompt = """
-You are a professional research report writer, like a senior journalist or analyst.
-
-Your job is to take raw research notes and transform them into a
-clean, well-structured, engaging markdown report.
-
-STRUCTURE RULES — pick subheadings that fit THIS specific topic:
+STRUCTURE — pick subheadings that fit the topic:
 - Person:      Early Life | Rise to Prominence | Achievements | Controversies | Legacy
 - Technology:  What It Is | How It Works | Who Uses It | Limitations | Future Outlook
 - Concept:     Core Idea | History | How It Works | Applications | Open Questions
 - Event:       Background | What Happened | Key Players | Impact | Long-Term Effects
 - Comparison:  At a Glance | Option A | Option B | Head-to-Head | Verdict
-- Other:       use your best judgment — pick whatever serves the reader best
+- Other:       use your best judgment
 
 WRITING RULES:
-1. Write full paragraphs under each subheading — not just bullet dumps
+1. Full paragraphs under each subheading — no bullet dumps
 2. Use ## for main subheadings, ### for sub-points if needed
 3. Include real facts, numbers, names, dates from the notes
 4. Remove duplicate or repeated information
-5. DO NOT search the web — only use what is in the notes given to you
-6. DO NOT invent or guess any facts — only use what you are given
-7. Minimum 450 words in the final report
-8. End with a ## Bottom Line section — one tight paragraph of key takeaways
+5. DO NOT search the web — use only the notes given
+6. DO NOT invent facts — only use what is provided
+7. Minimum 450 words
+8. End with ## Bottom Line — one tight paragraph of key takeaways
 
-BANNED — never use these headings, ever:
-Overview, Key Findings, Detailed Analysis, Conclusion
+BANNED headings: Overview | Key Findings | Detailed Analysis | Conclusion
 """
 
+def run_writer_agent(research_notes: str, topic: str) -> str:
+    if not research_notes or len(research_notes.strip()) < 50:
+        print("[Writer Agent] ⚠️  Notes too short or empty. Stopping.")
+        return "Error: Not enough research data to write a report."
+
     messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=f"""
-Topic: {topic}
-
-Raw Research Notes:
-{research_notes}
-
-Write the full structured report now based only on the notes above.
-        """)
+        SystemMessage(content=_SYSTEM_PROMPT),
+        HumanMessage(content=(
+            f"Topic: {topic}\n\n"
+            f"Raw Research Notes:\n{research_notes}\n\n"
+            f"Write the full structured report now based only on the notes above."
+        )),
     ]
-
     print("[Writer Agent] ✍️  Writing report...")
-    response = llm.invoke(messages)
-    report = response.content
+    response = _llm.invoke(messages)
+    report   = response.content
 
-    from tools.file_saver import save_to_file
-    safe_topic = topic.strip().lower().replace(" ", "_")
-    filename = f"report_{safe_topic}.md"
-    save_to_file(content=report, filename=filename)
+    try:
+        from tools.file_saver import save_to_file
+        safe   = topic.strip().lower().replace(" ", "_")[:50]
+        fname  = f"report_{safe}.md"
+        save_to_file(content=report, filename=fname)
+        print(f"[Writer Agent] ✅ Report saved locally as: {fname}")
+    except Exception as e:
+        print(f"[Writer Agent] ⚠️  Could not save locally: {e}")
 
-    print(f"[Writer Agent] ✅ Report saved as: {filename}")
     return report
