@@ -1,3 +1,7 @@
+"""
+agents/manager_agent.py
+Supervisor — routes tasks to the right agent using lazy LLM initialization.
+"""
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -6,11 +10,17 @@ from graph.state import AgentState
 
 load_dotenv()
 
-_llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    temperature=0,
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+_llm = None
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        _llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            temperature=0,
+            api_key=os.getenv("GROQ_API_KEY"),
+        )
+    return _llm
 
 _SYSTEM_PROMPT = """
 You are a supervisor managing three specialized agents:
@@ -42,7 +52,7 @@ def run_supervisor(state: AgentState) -> AgentState:
         f"  github_result  exists: {bool(state['github_result'])}\n\n"
         f"What runs next? (one word only)"
     )
-    response = _llm.invoke([
+    response = _get_llm().invoke([
         SystemMessage(content=_SYSTEM_PROMPT),
         HumanMessage(content=human),
     ])
