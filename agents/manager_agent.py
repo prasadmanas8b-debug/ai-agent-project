@@ -1,87 +1,56 @@
+import os
+from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from graph.state import AgentState
-import os
-from dotenv import load_dotenv
+
 load_dotenv()
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN FUNCTION: run_supervisor
-# ─────────────────────────────────────────────────────────────────────────────
 
-def run_supervisor(state: AgentState) -> AgentState:
-    """
-    Reads the current state of the pipeline and decides which agent to call
-    next. Returns an updated state dict with the 'next' field set to one of:
-        "research" | "writer" | "github" | "FINISH"
+_llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    temperature=0,
+    api_key=os.getenv("GROQ_API_KEY"),
+)
 
-    LangGraph will read state['next'] and route to the correct node.
-
-    Parameters
-    ----------
-    state : AgentState
-        The full shared state — all fields that exist at this point in time.
-        Some fields will be empty strings ("") if those agents haven't run yet.
-
-    Returns
-    -------
-    AgentState
-        Same state dict, but with state['next'] filled in with the routing
-        decision. The **state spread operator keeps every OTHER field intact.
-    """
-    # ── Step 1: Initialise the LLM ───────────────────────────────────────────
-    llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
-        temperature=0,
-        api_key=os.getenv("GROQ_API_KEY")
-    )
-    system_prompt = """
+_SYSTEM_PROMPT = """
 You are a supervisor managing three specialized agents:
   - research : searches the web and writes research notes into research_notes
   - writer   : takes research_notes and writes a polished report into final_report
-  - github   : performs GitHub actions (create files, list files, commit, push)
+  - github   : performs GitHub actions (create/update files, list files, commit, push)
 
-Your ONLY job is to read the task and current state, then decide which agent
-should run next.
+Your ONLY job: read the task + current state, then decide which agent runs next.
 
-Decision rules (apply in order, top to bottom):
-  1. If github_result exists (is not empty)                                    → return: FINISH
-  2. If final_report exists AND task mentions github/saving/commit/push        → return: github
-  3. If the task needs research AND research_notes is empty                    → return: research
-  4. If research_notes exists AND final_report is empty                        → return: writer
-  5. If the task mentions github/listing/files AND github_result is empty      → return: github
-  6. If all required work is complete                                           → return: FINISH
+Decision rules (apply top to bottom):
+  1. github_result is not empty                                              → FINISH
+  2. final_report exists AND task mentions github/save/commit/push          → github
+  3. task needs research AND research_notes is empty                        → research
+  4. research_notes exists AND final_report is empty                        → writer
+  5. task mentions github/list/files AND github_result is empty             → github
+  6. all required work is done                                              → FINISH
 
-CRITICAL RULES:
-  - Respond with EXACTLY ONE word, nothing else.
-  - Valid responses: research | writer | github | FINISH
-  - Do NOT explain your answer. Do NOT add punctuation. ONE word only.
-  - You do NO actual work yourself. You only route.
+CRITICAL:
+  - Reply with EXACTLY ONE word. No punctuation, no explanation.
+  - Valid replies: research | writer | github | FINISH
 """
-    human_message = f"""
-    Task: {state['task']}
 
-    Current state:
-    - research_notes  exists: {bool(state['research_notes'])}
-    - final_report    exists: {bool(state['final_report'])}
-    - github_result   exists: {bool(state['github_result'])}
-
-    Based on the rules, what should run next? (one word only)
-    """
-    # ── Step 4: Send the messages to the LLM ─────────────────────────────────
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=human_message),
-    ]
-    response = llm.invoke(messages)
-    # ── Step 5: Parse and clean the response ─────────────────────────────────
+def run_supervisor(state: AgentState) -> AgentState:
+    human = (
+        f"Task: {state['task']}\n\n"
+        f"State:\n"
+        f"  research_notes exists: {bool(state['research_notes'])}\n"
+        f"  final_report   exists: {bool(state['final_report'])}\n"
+        f"  github_result  exists: {bool(state['github_result'])}\n\n"
+        f"What runs next? (one word only)"
+    )
+    response = _llm.invoke([
+        SystemMessage(content=_SYSTEM_PROMPT),
+        HumanMessage(content=human),
+    ])
     decision = response.content.strip().lower()
     if decision == "finish":
         decision = "FINISH"
-    valid_decisions = {"research", "writer", "github", "FINISH"}
-    if decision not in valid_decisions:
-        print(f"[Supervisor] WARNING: Unexpected decision '{decision}'. Defaulting to FINISH.")
+    if decision not in {"research", "writer", "github", "FINISH"}:
+        print(f"[Supervisor] ⚠️  Unexpected decision '{decision}'. Defaulting to FINISH.")
         decision = "FINISH"
-
-    # ── Step 6: Log and return ───────────────────────────────────────────────
-    print(f"[Supervisor] Task: '{state['task'][:60]}...' → Decision: {decision}")
+    print(f"[Supervisor] '{state['task'][:60]}' → {decision}")
     return {**state, "next": decision}
