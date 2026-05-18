@@ -1,6 +1,7 @@
 """
 agents/github_agent.py
 Performs GitHub actions — all output files are saved inside git_agent_output/.
+Uses lazy LLM initialization so it's testable without API keys.
 """
 import os
 import json
@@ -16,11 +17,17 @@ load_dotenv()
 
 OUTPUT_FOLDER = "git_agent_output"
 
-_llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    temperature=0,
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+_llm = None
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        _llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            temperature=0,
+            api_key=os.getenv("GROQ_API_KEY"),
+        )
+    return _llm
 
 _SYSTEM_PROMPT = f"""
 You are a GitHub Agent. Your ONLY job is to perform actions on a GitHub repository.
@@ -93,7 +100,7 @@ def run_github_agent(state: dict) -> dict:
     print(f"\n🐙 GitHub Agent — task: {task[:120]}")
 
     try:
-        response   = _llm.invoke([
+        response   = _get_llm().invoke([
             SystemMessage(content=_SYSTEM_PROMPT),
             HumanMessage(content=user_message),
         ])
@@ -109,7 +116,6 @@ def run_github_agent(state: dict) -> dict:
 
     action = action_obj.get("action", "unknown")
 
-    # Enforce output folder for any write/read actions
     if action in ("create_file", "update_file", "create_or_update_file", "read_file", "delete_file"):
         action_obj["path"] = _enforce_output_folder(action_obj.get("path", "output.md"))
 
@@ -136,22 +142,10 @@ def _execute_action(action: str, p: dict) -> str:
         elif action == "delete_file":
             return delete_file(p["path"], p.get("commit_message", "Delete file via GitHub Agent"))
         elif action == "unknown":
-            return f"⚠️  GitHub Agent: not a GitHub task. Reason: {p.get('reason', 'unknown')}"
+            return f"⚠️ GitHub Agent: unknown action requested. Reason: {p.get('reason', 'N/A')}"
         else:
-            return f"❌ GitHub Agent: unrecognised action '{action}'"
+            return f"⚠️ GitHub Agent: unrecognized action '{action}'"
     except KeyError as e:
-        return f"❌ GitHub Agent: missing field for '{action}': {e}"
+        return f"❌ GitHub Agent: missing required field {e} for action '{action}'"
     except Exception as e:
-        return f"❌ GitHub Agent: error executing '{action}': {e}"
-
-if __name__ == "__main__":
-    tests = [
-        {"task": "List all files in the agents folder",     "final_report": "", "github_result": ""},
-        {"task": "Save this report to GitHub",              "final_report": "# AI Trends\nAI is evolving fast.", "github_result": ""},
-        {"task": "Create a branch called feature/new-test", "final_report": "", "github_result": ""},
-        {"task": "What is the capital of France?",          "final_report": "", "github_result": ""},
-    ]
-    for i, t in enumerate(tests, 1):
-        print(f"\n── Test {i} ──")
-        out = run_github_agent(t)
-        print(f"Result: {out['github_result']}")
+        return f"❌ GitHub Agent: unexpected error during '{action}': {e}"
