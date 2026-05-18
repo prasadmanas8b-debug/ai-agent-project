@@ -1,6 +1,7 @@
 """
 agents/writer_agent.py
 Takes raw research notes and produces a polished markdown report.
+Uses lazy LLM initialization so it's testable without API keys.
 """
 import os
 from dotenv import load_dotenv
@@ -9,11 +10,17 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 load_dotenv()
 
-_llm = ChatGroq(
-    model="meta-llama/llama-4-scout-17b-16e-instruct",
-    temperature=0.4,
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+_llm = None
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        _llm = ChatGroq(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            temperature=0.4,
+            api_key=os.getenv("GROQ_API_KEY"),
+        )
+    return _llm
 
 _SYSTEM_PROMPT = """
 You are a professional research report writer — like a senior journalist or analyst.
@@ -54,7 +61,7 @@ def run_writer_agent(research_notes: str, topic: str) -> str:
         )),
     ]
     print("[Writer Agent] ✍️  Writing report...")
-    response = _llm.invoke(messages)
+    response = _get_llm().invoke(messages)
     report   = response.content
 
     try:
