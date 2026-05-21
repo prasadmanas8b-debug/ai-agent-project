@@ -1,15 +1,14 @@
 """
 Module to generate an email for Kunal Toy's summer leave request.
-
-This module creates a professional email template for requesting a leave of 30 days during the summer.
-It includes a clear subject line, a formal greeting, an introduction stating the purpose of the email,
-details about the leave request, a closing statement, and a professional sign-off.
+This script creates a professional email template for requesting a leave of 30 days.
+It includes a subject line, formal greeting, introduction, details about the leave request,
+a closing statement, and a professional sign-off.
 """
 
 import os
-import datetime
+from datetime import datetime, timedelta
 
-def generate_email(supervisor_name, start_date, end_date):
+def generate_email(name, supervisor_name, start_date, end_date):
     # Define the email template
     email_template = f"""
 Subject: Request for Summer Leave
@@ -25,21 +24,22 @@ I would greatly appreciate it if you could approve my request. Please confirm on
 Thank you for your understanding and support. I look forward to hearing back from you.
 
 Best regards,
-Kunal Toy
+{name}
 """
 
     return email_template
 
+def get_start_and_end_dates(days):
+    # Calculate the start and end dates for the leave
+    today = datetime.now()
+    start_date = today.strftime("%Y-%m-%d")
+    end_date = (today + timedelta(days=days)).strftime("%Y-%m-%d")
+    return start_date, end_date
+
 if __name__ == "__main__":
-    # Define the supervisor's name
-    supervisor_name = "John Doe"
-
-    # Define the start and end dates of the leave
-    start_date = (datetime.date.today() + datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    end_date = (datetime.date.today() + datetime.timedelta(days=60)).strftime("%Y-%m-%d")
-
-    # Generate the email
-    email = generate_email(supervisor_name, start_date, end_date)
-
-    # Print the email
+    name = "Kunal Toy"
+    supervisor_name = "Supervisor's Name"  # Replace with actual supervisor's name
+    days = 30
+    start_date, end_date = get_start_and_end_dates(days)
+    email = generate_email(name, supervisor_name, start_date, end_date)
     print(email)
