@@ -1,8 +1,7 @@
 """
-Module to generate an email for Kunal Toy's summer leave request.
-This script creates a professional email template for requesting a leave of 30 days.
-It includes a subject line, formal greeting, introduction, details about the leave request,
-a closing statement, and a professional sign-off.
+Module to generate an email for Kunal Toy regarding a summer leave request.
+This script will create a draft email with a clear subject line, formal greeting,
+introduction, details about the leave request, closing statement, and professional sign-off.
 """
 
 import os
@@ -10,7 +9,7 @@ from datetime import datetime, timedelta
 
 def generate_email(name, supervisor_name, start_date, end_date):
     # Define the email template
-    email_template = f"""
+    email_template = """
 Subject: Request for Summer Leave
 
 Dear {supervisor_name},
@@ -27,19 +26,37 @@ Best regards,
 {name}
 """
 
-    return email_template
+    # Fill in the email template with the provided information
+    email = email_template.format(
+        name=name,
+        supervisor_name=supervisor_name,
+        start_date=start_date,
+        end_date=end_date
+    )
 
-def get_start_and_end_dates(days):
+    return email
+
+def get_dates(days):
     # Calculate the start and end dates for the leave
-    today = datetime.now()
+    today = datetime.today()
     start_date = today.strftime("%Y-%m-%d")
     end_date = (today + timedelta(days=days)).strftime("%Y-%m-%d")
+
     return start_date, end_date
 
 if __name__ == "__main__":
+    # Define the name and supervisor's name
     name = "Kunal Toy"
-    supervisor_name = "Supervisor's Name"  # Replace with actual supervisor's name
+    supervisor_name = "Supervisor's Name"
+
+    # Define the number of days for the leave
     days = 30
-    start_date, end_date = get_start_and_end_dates(days)
+
+    # Get the start and end dates for the leave
+    start_date, end_date = get_dates(days)
+
+    # Generate the email
     email = generate_email(name, supervisor_name, start_date, end_date)
+
+    # Print the email
     print(email)
