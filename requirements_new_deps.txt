@@ -1,0 +1,28 @@
+# New dependencies for production PDF Agent
+# Add these to your existing requirements.txt
+
+# Core PDF manipulation
+pymupdf>=1.23.0          # PyMuPDF — fitz — read, write, annotate, extract images, OCR
+pypdf>=3.0.0             # PdfReader/PdfWriter — merge, split, encrypt, metadata
+reportlab>=4.0.0         # PDF creation from scratch
+pillow>=10.0.0           # Image processing for OCR and image ops
+
+# OCR support (optional but recommended for scanned PDFs)
+pytesseract>=0.3.10      # Python wrapper for Tesseract OCR
+# Note: Also install Tesseract binary:
+#   Ubuntu/Debian: sudo apt-get install tesseract-ocr
+#   macOS:         brew install tesseract
+#   Windows:       https://github.com/UB-Mannheim/tesseract/wiki
+
+# Optional: Markdown → PDF conversion (alternative to ReportLab)
+# weasyprint>=60.0       # HTML/CSS → PDF (requires system GTK libs)
+# markdown>=3.5.0        # Markdown parser
+
+# Optional: Digital signatures
+# pyhanko>=0.20.0        # Digital signatures & PDF/A validation
+# cryptography>=41.0.0   # Already in requirements.txt
+
+# Optional: Excel export for tables
+# openpyxl>=3.1.0        # Excel (.xlsx) read/write
+
+# All other dependencies (groq, langchain, etc.) already in requirements.txt
