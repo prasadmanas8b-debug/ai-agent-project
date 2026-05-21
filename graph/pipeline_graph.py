@@ -1,6 +1,6 @@
 """
 graph/pipeline_graph.py  --  Builds and compiles the LangGraph state machine.
-Flow: supervisor -> research | writer | coder | github | pdf | convo -> supervisor -> ... -> FINISH
+Flow: supervisor -> research|writer|coder|github|pdf|email|convo -> supervisor -> ... -> FINISH
 """
 from langgraph.graph import StateGraph, END
 from graph.state import AgentState
@@ -10,6 +10,7 @@ from agents.writer_agent import run_writer_agent
 from agents.coder_agent import run_coder_agent
 from agents.github_agent import run_github_agent
 from agents.pdf_agent import run_pdf_agent
+from agents.email_agent import run_email_agent
 from agents.convo_agent import run_convo_agent
 
 
@@ -31,6 +32,9 @@ def github_node(state: AgentState) -> AgentState:
 def pdf_node(state: AgentState) -> AgentState:
     return run_pdf_agent(state)
 
+def email_node(state: AgentState) -> AgentState:
+    return run_email_agent(state)
+
 def convo_node(state: AgentState) -> AgentState:
     return run_convo_agent(state)
 
@@ -45,6 +49,7 @@ def build_graph():
     g.add_node("coder",      coder_node)
     g.add_node("github",     github_node)
     g.add_node("pdf",        pdf_node)
+    g.add_node("email",      email_node)
     g.add_node("convo",      convo_node)
 
     g.set_entry_point("supervisor")
@@ -54,6 +59,7 @@ def build_graph():
         "coder":    "coder",
         "github":   "github",
         "pdf":      "pdf",
+        "email":    "email",
         "convo":    "convo",
         "FINISH":   END,
     })
@@ -62,5 +68,6 @@ def build_graph():
     g.add_edge("coder",    "supervisor")
     g.add_edge("github",   "supervisor")
     g.add_edge("pdf",      "supervisor")
+    g.add_edge("email",    "supervisor")
     g.add_edge("convo",    "supervisor")
     return g.compile()
