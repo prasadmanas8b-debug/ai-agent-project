@@ -1,7 +1,7 @@
 """
 graph/state.py  --  Shared whiteboard passed between all agents.
 """
-from typing import TypedDict
+from typing import TypedDict, List, Dict
 
 class AgentState(TypedDict):
     task: str
@@ -22,6 +22,13 @@ class AgentState(TypedDict):
     pdf_result: str
     # Written by PDF Agent -- extracted text or summary from a PDF file.
 
+    convo_result: str
+    # Written by Convo Agent -- latest conversational reply.
+
+    conversation_history: List[Dict[str, str]]
+    # Maintained by Convo Agent -- list of {role: str, content: str} dicts.
+    # role is "user" or "assistant".
+
     next: str
     # Written by Supervisor each loop.
-    # Values: "research" | "writer" | "coder" | "github" | "pdf" | "FINISH"
+    # Values: "research" | "writer" | "coder" | "github" | "pdf" | "convo" | "FINISH"
