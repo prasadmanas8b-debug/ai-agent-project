@@ -19,6 +19,9 @@ class AgentState(TypedDict):
     github_result: str
     # Written by GitHub Agent -- result of file/branch operations.
 
+    pdf_result: str
+    # Written by PDF Agent -- extracted text or summary from a PDF file.
+
     next: str
     # Written by Supervisor each loop.
-    # Values: "research" | "writer" | "coder" | "github" | "FINISH"
+    # Values: "research" | "writer" | "coder" | "github" | "pdf" | "FINISH"
