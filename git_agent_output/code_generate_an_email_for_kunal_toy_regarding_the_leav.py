@@ -1,28 +1,17 @@
 """
-Module to generate an email for Kunal Toy regarding a leave request for summer.
-This module creates a professional email template that can be customized as needed.
+Module to generate an email for Kunal Toy's summer leave request.
+This script creates a draft email based on the provided template and allows for customization of the supervisor's name and leave dates.
 """
 
 import os
-from email.message import EmailMessage
 from datetime import datetime, timedelta
 
-def generate_email(subject, recipient, start_date, end_date):
-    # Create a new email message
-    msg = EmailMessage()
-    
-    # Set the subject of the email
-    msg['Subject'] = subject
-    
-    # Set the recipient of the email
-    msg['To'] = recipient
-    
-    # Set the sender of the email
-    msg['From'] = 'kunal.toy@example.com'
-    
-    # Create the body of the email
-    body = f"""
-Dear {recipient.split('@')[0].capitalize()},
+def generate_email(supervisor_name, start_date, end_date):
+    # Define the email template
+    email_template = """
+Subject: Request for Summer Leave
+
+Dear {supervisor_name},
 
 I hope this email finds you well. As the summer season approaches, I am writing to request a leave of 30 days to ensure I can take a substantial break and recharge. I understand that this is a busy period for the company, but I have reviewed our team's schedule and have made arrangements to ensure that my responsibilities are covered during my absence.
 
@@ -35,25 +24,29 @@ Thank you for your understanding and support. I look forward to hearing back fro
 Best regards,
 Kunal Toy
 """
-    
-    # Set the body of the email
-    msg.set_content(body)
-    
-    return msg
+
+    # Format the email template with the provided details
+    email = email_template.format(supervisor_name=supervisor_name, start_date=start_date, end_date=end_date)
+
+    return email
+
+def get_leave_dates(days):
+    # Calculate the leave dates based on the current date
+    current_date = datetime.now()
+    start_date = current_date.strftime("%Y-%m-%d")
+    end_date = (current_date + timedelta(days=days)).strftime("%Y-%m-%d")
+
+    return start_date, end_date
 
 if __name__ == "__main__":
-    # Set the subject of the email
-    subject = "Request for Summer Leave"
-    
-    # Set the recipient of the email
-    recipient = "supervisor@example.com"
-    
-    # Set the start and end dates of the leave
-    start_date = (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
-    end_date = (datetime.now() + timedelta(days=44)).strftime("%Y-%m-%d")
-    
+    # Get the supervisor's name from the environment variable
+    supervisor_name = os.getenv("SUPERVISOR_NAME", "John Doe")
+
+    # Get the leave dates
+    start_date, end_date = get_leave_dates(30)
+
     # Generate the email
-    email = generate_email(subject, recipient, start_date, end_date)
-    
+    email = generate_email(supervisor_name, start_date, end_date)
+
     # Print the email
     print(email)
