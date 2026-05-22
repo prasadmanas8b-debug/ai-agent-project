@@ -6,12 +6,11 @@ class Photosynthesis:
     def __init__(self, light_intensity, temperature, co2_concentration, water_availability):
         """
         Initialize the photosynthesis process with given parameters.
-
-        Args:
-            light_intensity (float): The intensity of light.
-            temperature (float): The temperature in degrees Celsius.
-            co2_concentration (float): The concentration of CO2.
-            water_availability (float): The availability of water.
+        
+        :param light_intensity: Light intensity in umol/m^2s
+        :param temperature: Temperature in degree Celsius
+        :param co2_concentration: CO2 concentration in ppm
+        :param water_availability: Water availability in percentage
         """
         self.light_intensity = light_intensity
         self.temperature = temperature
@@ -20,28 +19,26 @@ class Photosynthesis:
 
     def calculate_photosynthesis_rate(self):
         """
-        Calculate the rate of photosynthesis based on the given parameters.
-
-        Returns:
-            float: The rate of photosynthesis.
+        Calculate the rate of photosynthesis based on given parameters.
+        
+        :return: Rate of photosynthesis
         """
-        # Assuming a simple linear relationship between the parameters and the rate of photosynthesis
-        rate = (self.light_intensity * 0.2) + (self.temperature * 0.1) + (self.co2_concentration * 0.3) + (self.water_availability * 0.4)
+        # Assuming a simple linear relationship between parameters and photosynthesis rate
+        rate = (self.light_intensity * 0.1) + (self.temperature * 0.2) + (self.co2_concentration * 0.3) + (self.water_availability * 0.4)
         return rate
 
     def generate_report(self):
         """
-        Generate a report on the photosynthesis process.
-
-        Returns:
-            str: The report.
+        Generate a report based on the photosynthesis process.
+        
+        :return: Report as a string
         """
         report = "Photosynthesis Report:\n"
-        report += f"Light Intensity: {self.light_intensity}\n"
-        report += f"Temperature: {self.temperature} degrees Celsius\n"
-        report += f"CO2 Concentration: {self.co2_concentration}\n"
-        report += f"Water Availability: {self.water_availability}\n"
-        report += f"Rate of Photosynthesis: {self.calculate_photosynthesis_rate()}\n"
+        report += f"Light Intensity: {self.light_intensity} umol/m^2s\n"
+        report += f"Temperature: {self.temperature} degree Celsius\n"
+        report += f"CO2 Concentration: {self.co2_concentration} ppm\n"
+        report += f"Water Availability: {self.water_availability}%\n"
+        report += f"Photosynthesis Rate: {self.calculate_photosynthesis_rate()}\n"
         return report
 
 if __name__ == "__main__":
@@ -52,5 +49,5 @@ if __name__ == "__main__":
     report = photosynthesis.generate_report()
     print(report)
 
-    # Note: As per the instructions, no personal information such as mobile numbers or Instagram IDs should be shared.
-    # This code is for demonstration purposes only and does not include any personal information.
+    # Note: This is a simple simulation and actual photosynthesis process is more complex.
+    # Also, I don't have any personal information like mobile number or Instagram ID to share.
