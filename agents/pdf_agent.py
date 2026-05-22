@@ -149,9 +149,54 @@ Required format:
     if not raw:
         return {"error": "LLM returned empty response for feat_create"}
     try:
-        return json.loads(raw)
+        result = json.loads(raw)
     except json.JSONDecodeError as e:
         return {"error": f"JSON parse failed: {e}", "raw_response": raw[:500]}
+
+    # ── Execute the generated ReportLab code and save the PDF ──────────────
+    python_code = result.get("python_code", "")
+    if python_code:
+        output_path = "outputs/pdf_agent_output.pdf"
+        try:
+            os.makedirs("outputs", exist_ok=True)
+            exec_globals = {"__builtins__": __builtins__}
+            exec(compile(python_code, "<pdf_gen>", "exec"), exec_globals)
+            if os.path.exists(output_path):
+                with open(output_path, "rb") as f:
+                    pdf_bytes_out = f.read()
+                result["saved_path"] = output_path
+                result["pdf_b64"] = _bytes_to_b64(pdf_bytes_out)
+                result["file_size_kb"] = round(len(pdf_bytes_out) / 1024, 1)
+                print(f"📄 PDF Agent — created PDF: {output_path} ({result['file_size_kb']} KB)")
+            else:
+                result["warning"] = "Code executed but PDF file not found at outputs/pdf_agent_output.pdf"
+        except Exception as exec_err:
+            result["exec_error"] = str(exec_err)
+            # Fallback: build a simple PDF with reportlab directly
+            try:
+                from reportlab.lib.pagesizes import A4
+                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+                from reportlab.lib.styles import getSampleStyleSheet
+                os.makedirs("outputs", exist_ok=True)
+                doc = SimpleDocTemplate(output_path, pagesize=A4)
+                styles = getSampleStyleSheet()
+                story = [
+                    Paragraph(result.get("title", "Generated Document"), styles["Title"]),
+                    Spacer(1, 12),
+                    Paragraph(result.get("preview_text", task), styles["BodyText"]),
+                ]
+                doc.build(story)
+                with open(output_path, "rb") as f:
+                    pdf_bytes_out = f.read()
+                result["saved_path"] = output_path
+                result["pdf_b64"] = _bytes_to_b64(pdf_bytes_out)
+                result["file_size_kb"] = round(len(pdf_bytes_out) / 1024, 1)
+                result["fallback_used"] = True
+                print(f"📄 PDF Agent — fallback PDF saved: {output_path}")
+            except Exception as fb_err:
+                result["fallback_error"] = str(fb_err)
+
+    return result
 
 # ── 3. Summarize ──────────────────────────────────────────────────────────────
 def feat_summarize(pdf_bytes: bytes, task: str) -> dict:
@@ -1135,3 +1180,4 @@ def run_pdf_agent(state: AgentState) -> AgentState:
     output = json.dumps(result, ensure_ascii=False, indent=2)
     print(f"📄 PDF Agent — done, output {len(output):,} chars")
     return {**state, "pdf_result": output}
+
