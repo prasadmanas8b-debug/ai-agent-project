@@ -1,43 +1,54 @@
 """
-This module simulates a simple expert system for providing guidance on micropenis and delayed puberty.
-It takes into account the individual's age, medication, and desired outcomes to provide recommendations.
+This module simulates a simple expert system to provide guidance on micropenis and delayed puberty.
+It assesses the user's condition, provides information on potential causes, and suggests possible treatment options.
 """
 
 class MicropenisExpertSystem:
-    def __init__(self, age, medication, desired_outcome):
-        self.age = age
-        self.medication = medication
-        self.desired_outcome = desired_outcome
+    def __init__(self):
+        # Initialize a dictionary to store user information
+        self.user_info = {}
 
-    def evaluate_condition(self):
-        # Simulate a comprehensive evaluation to determine the underlying cause
-        # For simplicity, this is a random assignment
-        causes = ["hormonal deficiency", "genetic disorder", "environmental factor"]
-        underlying_cause = causes[0]  # Replace with actual evaluation logic
+    def get_user_info(self):
+        # Get user information, including age and medication
+        self.user_info['age'] = int(input("Enter your age: "))
+        self.user_info['medication'] = input("Enter your current medication: ")
 
-        return underlying_cause
-
-    def recommend_treatment(self, underlying_cause):
-        # Simulate treatment recommendations based on the underlying cause
-        if underlying_cause == "hormonal deficiency":
-            return "Hormonal therapy, such as testosterone replacement"
-        elif underlying_cause == "genetic disorder":
-            return "Genetic counseling and possible surgical intervention"
+    def assess_condition(self):
+        # Assess the user's condition based on age and medication
+        if self.user_info['age'] < 20 and self.user_info['medication'] == "horse fire":
+            return "Your condition may be related to hormonal deficiencies or genetic disorders."
         else:
-            return "Lifestyle modifications and psychological support"
+            return "Your condition may be related to other factors. Please consult a specialist."
+
+    def suggest_treatment(self):
+        # Suggest possible treatment options based on the user's condition
+        if self.user_info['age'] < 20:
+            return "Hormonal therapy, such as testosterone replacement, may be effective in stimulating penile growth."
+        else:
+            return "Surgical intervention or lifestyle modifications may be considered. Please consult a specialist."
 
     def provide_guidance(self):
-        underlying_cause = self.evaluate_condition()
-        treatment_recommendation = self.recommend_treatment(underlying_cause)
+        # Provide guidance on next steps
+        return "Please consult a specialist, such as an endocrinologist or urologist, to determine the underlying cause of your condition and develop a personalized treatment plan."
 
-        print(f"Based on your condition, the underlying cause is likely: {underlying_cause}")
-        print(f"Recommended treatment: {treatment_recommendation}")
-        print("It is essential to consult a specialist for a comprehensive evaluation and personalized guidance.")
+def main():
+    # Create an instance of the MicropenisExpertSystem class
+    expert_system = MicropenisExpertSystem()
+
+    # Get user information
+    expert_system.get_user_info()
+
+    # Assess the user's condition
+    condition_assessment = expert_system.assess_condition()
+    print("Condition Assessment:", condition_assessment)
+
+    # Suggest possible treatment options
+    treatment_suggestion = expert_system.suggest_treatment()
+    print("Treatment Suggestion:", treatment_suggestion)
+
+    # Provide guidance on next steps
+    guidance = expert_system.provide_guidance()
+    print("Guidance:", guidance)
 
 if __name__ == "__main__":
-    manas_age = 19
-    manas_medication = "horse fire"
-    manas_desired_outcome = "fulfill desires"
-
-    expert_system = MicropenisExpertSystem(manas_age, manas_medication, manas_desired_outcome)
-    expert_system.provide_guidance()
+    main()
