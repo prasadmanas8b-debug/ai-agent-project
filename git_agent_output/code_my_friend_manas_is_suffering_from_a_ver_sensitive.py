@@ -1,54 +1,42 @@
 """
-This module simulates a simple expert system to provide guidance on micropenis and delayed puberty.
-It assesses the user's condition, provides information on potential causes, and suggests possible treatment options.
+Module to simulate and provide guidance on micropenis and delayed puberty conditions.
+It includes a simple expert system to suggest potential treatments based on user input.
 """
 
 class MicropenisExpertSystem:
     def __init__(self):
-        # Initialize a dictionary to store user information
-        self.user_info = {}
+        # Initialize a dictionary to store user input and potential treatments
+        self.user_input = {}
+        self.treatments = {
+            "hormonal_therapy": "Testosterone replacement therapy",
+            "surgical_intervention": "Penis enlargement surgery",
+            "psychological_support": "Counseling and therapy",
+            "lifestyle_modifications": "Healthy diet and exercise"
+        }
 
-    def get_user_info(self):
-        # Get user information, including age and medication
-        self.user_info['age'] = int(input("Enter your age: "))
-        self.user_info['medication'] = input("Enter your current medication: ")
+    def get_user_input(self):
+        # Get user input regarding their condition and current treatment
+        self.user_input["age"] = int(input("Enter your age: "))
+        self.user_input["current_treatment"] = input("Enter your current treatment: ")
+        self.user_input["symptoms"] = input("Enter your symptoms: ")
 
-    def assess_condition(self):
-        # Assess the user's condition based on age and medication
-        if self.user_info['age'] < 20 and self.user_info['medication'] == "horse fire":
-            return "Your condition may be related to hormonal deficiencies or genetic disorders."
-        else:
-            return "Your condition may be related to other factors. Please consult a specialist."
-
-    def suggest_treatment(self):
-        # Suggest possible treatment options based on the user's condition
-        if self.user_info['age'] < 20:
-            return "Hormonal therapy, such as testosterone replacement, may be effective in stimulating penile growth."
-        else:
-            return "Surgical intervention or lifestyle modifications may be considered. Please consult a specialist."
-
-    def provide_guidance(self):
-        # Provide guidance on next steps
-        return "Please consult a specialist, such as an endocrinologist or urologist, to determine the underlying cause of your condition and develop a personalized treatment plan."
+    def suggest_treatments(self):
+        # Suggest potential treatments based on user input
+        print("Potential treatments:")
+        if self.user_input["age"] < 20:
+            print(self.treatments["hormonal_therapy"])
+        if self.user_input["current_treatment"] == "horse fire":
+            print(self.treatments["psychological_support"])
+        if "micropenis" in self.user_input["symptoms"].lower():
+            print(self.treatments["surgical_intervention"])
+        print(self.treatments["lifestyle_modifications"])
 
 def main():
-    # Create an instance of the MicropenisExpertSystem class
+    # Create an instance of the expert system and get user input
     expert_system = MicropenisExpertSystem()
-
-    # Get user information
-    expert_system.get_user_info()
-
-    # Assess the user's condition
-    condition_assessment = expert_system.assess_condition()
-    print("Condition Assessment:", condition_assessment)
-
-    # Suggest possible treatment options
-    treatment_suggestion = expert_system.suggest_treatment()
-    print("Treatment Suggestion:", treatment_suggestion)
-
-    # Provide guidance on next steps
-    guidance = expert_system.provide_guidance()
-    print("Guidance:", guidance)
+    expert_system.get_user_input()
+    # Suggest potential treatments
+    expert_system.suggest_treatments()
 
 if __name__ == "__main__":
     main()
