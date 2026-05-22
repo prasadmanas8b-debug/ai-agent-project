@@ -32,4 +32,5 @@ build/
 Thumbs.db
 
 # Logs
-*.log
+*.logoutputs/*
+!outputs/.gitkeep

@@ -6,7 +6,15 @@ Agents: Research · Writer · Coder · GitHub · PDF · Email · Convo · Databa
 import json, os, base64
 from graph.pipeline_graph import build_graph
 
+def _ensure_outputs_dir():
+    """Fix: 'outputs' may exist as a file (git artifact) instead of a directory."""
+    import shutil
+    if os.path.isfile("outputs"):
+        os.remove("outputs")
+    os.makedirs("outputs", exist_ok=True)
+
 def main():
+    _ensure_outputs_dir()
     graph = build_graph()
 
     print("\n" + "="*60)
@@ -119,7 +127,7 @@ def main():
             summary = {k: v for k, v in parsed.items() if k not in skip}
             print(json.dumps(summary, indent=2, ensure_ascii=False))
 
-            os.makedirs("outputs", exist_ok=True)
+            os.makedirs("outputs", exist_ok=True) if not os.path.isfile("outputs") else None
             if parsed.get("pdf_b64"):
                 path = "outputs/pdf_agent_output.pdf"
                 with open(path, "wb") as f:
@@ -164,7 +172,7 @@ def main():
             summary = {k: v for k, v in parsed.items() if k not in skip}
             print(json.dumps(summary, indent=2, ensure_ascii=False))
 
-            os.makedirs("outputs", exist_ok=True)
+            os.makedirs("outputs", exist_ok=True) if not os.path.isfile("outputs") else None
             if parsed.get("body_html"):
                 with open("outputs/email_output.html","w") as f:
                     f.write(parsed["body_html"])

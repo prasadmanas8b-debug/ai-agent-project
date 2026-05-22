@@ -126,15 +126,32 @@ def feat_read(pdf_bytes: bytes, task: str) -> dict:
 # ── 2. Create PDF from prompt ─────────────────────────────────────────────────
 def feat_create(task: str) -> dict:
     SYSTEM = """You are a PDF content generator.
-Return ONLY valid JSON:
+You MUST return ONLY a valid JSON object — no markdown fences, no explanation, no preamble.
+Start your response with { and end with }.
+Required format:
 {
   "title": "document title",
   "plan": "structured outline",
-  "python_code": "complete ReportLab code that saves to output.pdf — include title page, headers, footers, page numbers, styled headings, body, bullets, tables where relevant",
-  "preview_text": "first 3 paragraphs of the content"
+  "python_code": "complete ReportLab Python code that saves to outputs/pdf_agent_output.pdf — include title page, headers, footers, page numbers, styled headings, body paragraphs, bullets, tables where relevant. Import everything needed. Use only reportlab.",
+  "preview_text": "first 3 paragraphs of the actual document content"
 }"""
-    raw = _llm_call(SYSTEM, f"Create a professional PDF document: {task}")
-    return _parse_json(raw)
+    raw = _llm_call(SYSTEM, f"Create a professional PDF document about: {task}")
+    # Strip markdown fences if present
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```[a-z]*\n?", "", raw)
+        raw = re.sub(r"```$", "", raw.strip()).strip()
+    # Find JSON object boundaries
+    start = raw.find("{")
+    end = raw.rfind("}") + 1
+    if start != -1 and end > start:
+        raw = raw[start:end]
+    if not raw:
+        return {"error": "LLM returned empty response for feat_create"}
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON parse failed: {e}", "raw_response": raw[:500]}
 
 # ── 3. Summarize ──────────────────────────────────────────────────────────────
 def feat_summarize(pdf_bytes: bytes, task: str) -> dict:
