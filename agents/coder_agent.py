@@ -74,7 +74,7 @@ def run_coder_agent(state: dict) -> dict:
         return {**state, "code_result": msg}
 
     safe = re.sub(r"[^\w]", "_", task.lower())[:50].strip("_")
-    filename = f"git_agent_output/code_{safe}.py"
+    filename = f"outputs/code_{safe}.py"
     print(f"💻 Coder Agent -- saving to: {filename}")
 
     save_result = create_or_update_file(
