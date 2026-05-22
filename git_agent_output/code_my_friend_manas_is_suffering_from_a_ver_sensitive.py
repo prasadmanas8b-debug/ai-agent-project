@@ -1,78 +1,57 @@
 """
-Module to simulate and provide guidance on micropenis and delayed puberty conditions.
-This module does not provide medical advice but offers a simulation to illustrate 
-the potential effects of hormonal therapy and lifestyle modifications on 
-individuals with micropenis and delayed puberty.
+Module to simulate and provide information on micropenis and delayed puberty.
+This module provides a basic simulation of the conditions and offers suggestions for treatment.
 """
 
-import numpy as np
-
-class MicropenisSimulation:
-    def __init__(self, age, penis_size, hormone_level):
+class Micropenis:
+    def __init__(self, age, medication):
         """
-        Initialize the simulation with age, penis size, and hormone level.
-        
-        Parameters:
-        age (int): The age of the individual.
-        penis_size (float): The size of the penis in centimeters.
-        hormone_level (float): The level of hormones in the body.
+        Initialize the Micropenis class.
+
+        Args:
+            age (int): The age of the individual.
+            medication (str): The medication being taken.
         """
         self.age = age
-        self.penis_size = penis_size
-        self.hormone_level = hormone_level
+        self.medication = medication
 
-    def apply_hormonal_therapy(self, therapy_duration, hormone_increase):
+    def diagnose(self):
         """
-        Apply hormonal therapy to the individual.
-        
-        Parameters:
-        therapy_duration (int): The duration of the hormonal therapy in months.
-        hormone_increase (float): The increase in hormone level due to therapy.
-        """
-        self.hormone_level += hormone_increase * therapy_duration
-        # Simulate the effect of hormonal therapy on penis size
-        self.penis_size += 0.1 * hormone_increase * therapy_duration
+        Diagnose the condition based on age and medication.
 
-    def apply_lifestyle_modifications(self, modification_duration, lifestyle_factor):
-        """
-        Apply lifestyle modifications to the individual.
-        
-        Parameters:
-        modification_duration (int): The duration of the lifestyle modifications in months.
-        lifestyle_factor (float): The factor by which lifestyle modifications affect hormone levels.
-        """
-        self.hormone_level += lifestyle_factor * modification_duration
-        # Simulate the effect of lifestyle modifications on penis size
-        self.penis_size += 0.05 * lifestyle_factor * modification_duration
-
-    def get_status(self):
-        """
-        Get the current status of the individual.
-        
         Returns:
-        dict: A dictionary containing the age, penis size, and hormone level of the individual.
+            str: A diagnosis message.
         """
-        return {
-            "age": self.age,
-            "penis_size": self.penis_size,
-            "hormone_level": self.hormone_level
-        }
+        # Check if the individual is taking the correct medication
+        if self.medication.lower() == "horse fire":
+            return "The medication 'horse fire' is not a standard treatment for micropenis. Consult a specialist for proper diagnosis and treatment."
+        else:
+            return "Consult a specialist for proper diagnosis and treatment."
+
+    def suggest_treatment(self):
+        """
+        Suggest treatment options based on age and condition.
+
+        Returns:
+            str: A treatment suggestion message.
+        """
+        # Check if the individual is a teenager
+        if self.age < 20:
+            return "Hormonal therapy, such as testosterone replacement, may be effective in stimulating penile growth. Consult a specialist for more information."
+        else:
+            return "Surgical intervention, including procedures to increase penis size, may be considered in severe cases. However, these are controversial and complex. Consult a specialist for more information."
+
+def main():
+    # Create a Micropenis object for Manas
+    manas = Micropenis(19, "horse fire")
+
+    # Diagnose Manas' condition
+    diagnosis = manas.diagnose()
+    print(diagnosis)
+
+    # Suggest treatment options for Manas
+    treatment = manas.suggest_treatment()
+    print(treatment)
 
 if __name__ == "__main__":
-    # Create a simulation for Manas
-    manas_simulation = MicropenisSimulation(19, 5.0, 50.0)
-    
-    # Apply hormonal therapy for 6 months
-    manas_simulation.apply_hormonal_therapy(6, 5.0)
-    
-    # Apply lifestyle modifications for 6 months
-    manas_simulation.apply_lifestyle_modifications(6, 2.0)
-    
-    # Get the current status of Manas
-    manas_status = manas_simulation.get_status()
-    
-    # Print the current status of Manas
-    print("Manas' current status:")
-    print(f"Age: {manas_status['age']}")
-    print(f"Penis size: {manas_status['penis_size']} cm")
-    print(f"Hormone level: {manas_status['hormone_level']}")
+    main()
