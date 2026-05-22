@@ -12,11 +12,17 @@ from tools.github_tools import create_or_update_file
 
 load_dotenv()
 
-_llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    temperature=0.3,
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+_llm = None  # Lazy init — avoids crash at import if GROQ_API_KEY not set yet
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        _llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            temperature=0.3,
+            api_key=os.getenv("GROQ_API_KEY"),
+        )
+    return _llm
 
 _SYSTEM_PROMPT = """
 You are an expert Python software engineer acting as a Coder Agent.
@@ -49,10 +55,10 @@ def run_coder_agent(state: dict) -> dict:
         ctx += f"Research Notes (use as context):\n{research[:3000]}\n\n"
     ctx += "Generate the Python code now."
 
-    print(f"\n\U0001f4bb Coder Agent -- task: {task[:100]}")
+    print(f"\n💻 Coder Agent -- task: {task[:100]}")
 
     try:
-        response = _llm.invoke([
+        response = _get_llm().invoke([
             SystemMessage(content=_SYSTEM_PROMPT),
             HumanMessage(content=ctx),
         ])
@@ -69,14 +75,14 @@ def run_coder_agent(state: dict) -> dict:
 
     safe = re.sub(r"[^\w]", "_", task.lower())[:50].strip("_")
     filename = f"git_agent_output/code_{safe}.py"
-    print(f"\U0001f4bb Coder Agent -- saving to: {filename}")
+    print(f"💻 Coder Agent -- saving to: {filename}")
 
     save_result = create_or_update_file(
         path=filename,
         content=code,
         commit_message=f"feat(coder): generate code for '{task[:60]}'",
     )
-    print(f"\U0001f4bb Coder Agent -- {save_result}")
+    print(f"💻 Coder Agent -- {save_result}")
     return {**state, "code_result": f"{save_result} | {len(code.splitlines())} lines generated."}
 
 

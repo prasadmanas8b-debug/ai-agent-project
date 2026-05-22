@@ -1,6 +1,6 @@
 """
 main.py  --  Entry point for the AI Agent System.
-Agents: Research · Writer · Coder · GitHub · PDF · Email · Convo
+Agents: Research · Writer · Coder · GitHub · PDF · Email · Convo · Database
         (orchestrated by Supervisor)
 """
 import json, os, base64
@@ -10,7 +10,7 @@ def main():
     graph = build_graph()
 
     print("\n" + "="*60)
-    print("  AI Agent System  --  Research · Write · Code · PDF · Email · Chat")
+    print("  AI Agent System  --  Research · Write · Code · PDF · Email · Chat · Database")
     print("="*60)
     print("General:")
     print("  Research quantum computing")
@@ -36,6 +36,15 @@ def main():
     print("  Extract action items from this email")
     print("  Create an email template for cold outreach")
     print("  A/B test subject lines for this campaign")
+    print()
+    print("Database Agent (42 features):")
+    print("  List all tables in the database")
+    print("  Show me all users in the users table")
+    print("  How many orders were placed this month?")
+    print("  Export the products table to CSV")
+    print("  Find duplicate records in the customers table")
+    print("  Run a health check on the database")
+    print("  Analyze data quality for the orders table")
     print("="*60 + "\n")
 
     user_input = input("What do you want to do? ").strip()
@@ -64,6 +73,7 @@ def main():
         "pdf_result":           "",
         "email_result":         "",
         "convo_result":         "",
+        "db_result":            "",
         "conversation_history": [],
         "next":                 "",
         # PDF Agent fields
@@ -74,6 +84,9 @@ def main():
         # Email Agent fields
         "email_mode":           "auto",
         "email_context":        {"original_email": email_body} if email_body else {},
+        # Database Agent fields
+        "db_mode":              "auto",
+        "db_context":           {},
     }
 
     print("\n[System] Starting graph...\n")
@@ -126,10 +139,10 @@ def main():
                         f.write(base64.b64decode(part["pdf_b64"]))
                 print(f"✅ {len(parsed['parts'])} split PDF(s) saved → outputs/")
             if parsed.get("csvs"):
-                for i, csv in enumerate(parsed["csvs"],1):
-                    fname = f"outputs/table_{i}_{csv.get('title','data')}.csv"
+                for i, csv_item in enumerate(parsed["csvs"],1):
+                    fname = f"outputs/table_{i}_{csv_item.get('title','data')}.csv"
                     with open(fname,"w") as f:
-                        f.write(csv["csv"])
+                        f.write(csv_item["csv"])
                 print(f"✅ {len(parsed['csvs'])} CSV(s) saved → outputs/")
             if parsed.get("markdown"):
                 with open("outputs/output.md","w") as f:
@@ -152,23 +165,19 @@ def main():
             print(json.dumps(summary, indent=2, ensure_ascii=False))
 
             os.makedirs("outputs", exist_ok=True)
-            # Save HTML body
             if parsed.get("body_html"):
                 with open("outputs/email_output.html","w") as f:
                     f.write(parsed["body_html"])
                 print("✅ HTML email saved → outputs/email_output.html")
-            # Save export content
             if parsed.get("content") and parsed.get("filename"):
                 fpath = f"outputs/{parsed['filename']}"
                 with open(fpath,"w") as f:
                     f.write(parsed["content"])
                 print(f"✅ Export saved → {fpath}")
-            # Save code
             if parsed.get("python_code"):
                 with open("outputs/email_code.py","w") as f:
                     f.write(parsed["python_code"])
                 print("✅ Python code saved → outputs/email_code.py")
-            # Send result
             if parsed.get("send_result"):
                 sr = parsed["send_result"]
                 if sr.get("sent"):
@@ -179,6 +188,24 @@ def main():
                     print(f"❌ Send failed: {sr.get('error')}")
         except (json.JSONDecodeError, KeyError):
             print(result["email_result"][:800])
+
+    # ── Database result ───────────────────────────────────────────────────────
+    if result.get("db_result"):
+        print("\n--- Database Agent ---")
+        try:
+            parsed = json.loads(result["db_result"])
+            # Skip large row data for cleaner console output
+            skip = {"rows", "entries", "trend_data", "duplicate_groups", "column_report"}
+            summary = {k: v for k, v in parsed.items() if k not in skip}
+            print(json.dumps(summary, indent=2, ensure_ascii=False))
+
+            # Print row count if rows were returned
+            if parsed.get("rows") is not None:
+                print(f"  rows returned: {len(parsed['rows'])}")
+            if parsed.get("output_path"):
+                print(f"✅ Export saved → {parsed['output_path']}")
+        except (json.JSONDecodeError, KeyError):
+            print(result["db_result"][:800])
 
 if __name__ == "__main__":
     main()

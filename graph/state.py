@@ -28,24 +28,21 @@ class AgentState(TypedDict):
     convo_result: str
     # Written by Convo Agent -- latest conversational reply.
 
+    db_result: str
+    # Written by Database Agent -- JSON string with query/operation result.
+
     conversation_history: List[Dict[str, str]]
     # Maintained by Convo Agent -- list of {role: str, content: str} dicts.
     # role is "user" or "assistant".
 
     next: str
     # Written by Supervisor each loop.
-    # Values: "research"|"writer"|"coder"|"github"|"pdf"|"email"|"convo"|"FINISH"
+    # Values: "research"|"writer"|"coder"|"github"|"pdf"|"email"|"convo"|"database"|"FINISH"
 
     # ── PDF Agent fields ──────────────────────────────────────────────────────
 
     pdf_mode: str
     # Controls which PDF feature to invoke. Defaults to "auto".
-    # Options: read|create|summarize|qa|translate|extract|search|find_replace|
-    #   watermark|page_numbers|header_footer|page_ops|split|merge|merge_plan|
-    #   extract_images|pdf_to_images|classify|sentiment|ner|compare|autotag|
-    #   reformat|md_to_pdf|tables_to_csv|to_markdown|to_html|metadata|set_metadata|
-    #   protect|decrypt|redact|signature|ocr|annotate|bookmarks|compress|repair|
-    #   linearize|forms|accessibility|batch|rewrite
 
     pdf_text: str
     # Optional pre-extracted text for the PDF agent. Skips file loading if provided.
@@ -60,24 +57,49 @@ class AgentState(TypedDict):
 
     email_mode: str
     # Controls which Email feature to invoke. Defaults to "auto".
-    # Options: compose|reply|forward|send|rewrite_tone|resize|fix_grammar|
-    #   improve_clarity|translate|suggest_subject|from_bullets|match_style|
-    #   read|search|digest|summarize|summarize_thread|extract_actions|
-    #   extract_entities|analyze|classify|smart_reply|auto_reply|follow_up|
-    #   template|mail_merge|drip|ab_test|schedule|best_time|security_check|
-    #   sensitive_data|gdpr|crm_log|meeting|unsubscribe|bulk|export|signature
 
     email_context: Dict[str, Any]
-    # Optional context dict for the email agent. Supported keys:
-    #   to:             str  — recipient email address
-    #   cc:             str  — CC address
-    #   bcc:            str  — BCC address
-    #   tone:           str  — formal|casual|friendly|assertive|empathetic|concise
-    #   original_email: str  — original email text (for reply/analyze/rewrite)
-    #   message_id:     str  — Message-ID header (for threading)
-    #   auto_send:      bool — if True, sends immediately via SMTP after composing
-    #   thread:         list — list of {from, body, date} dicts for thread summary
-    #   recipients:     list — list of email addresses (for mail merge)
-    #   template:       str  — template text with {{placeholders}}
-    #   subject:        str  — email subject (for export / set operations)
-    #   attachment:     dict — {filename, data (base64), content_type}
+    # Optional context dict for the email agent.
+
+    # ── Database Agent fields ─────────────────────────────────────────────────
+
+    db_mode: str
+    # Controls which Database feature to invoke. Defaults to "auto".
+    # Options: connect|list_databases|list_tables|table_schema|health_check|disconnect|
+    #   query|filter|search|paginate|sort|join|aggregate|distinct|
+    #   insert|update|delete|bulk_insert|upsert|truncate|
+    #   nl_to_sql|summarize_table|find_anomalies|find_duplicates|data_quality|
+    #   trend_analysis|correlation|auto_insights|
+    #   export_csv|export_json|export_excel|export_schema_md|sql_dump|
+    #   to_writer|to_coder|to_github|to_pdf|to_email|
+    #   validate_query|explain|readonly_toggle|audit_log
+
+    db_context: Dict[str, Any]
+    # Optional context dict for the database agent. Supported keys:
+    #   table:        str  -- target table name
+    #   query:        str  -- raw SQL SELECT query
+    #   nl_query:     str  -- natural language query for nl_to_sql
+    #   condition:    str  -- WHERE clause string
+    #   data:         dict -- column:value pairs for insert/update/upsert
+    #   updates:      dict -- column:value pairs for update
+    #   rows:         list -- list of dicts for bulk_insert
+    #   csv_path:     str  -- path to CSV file for bulk_insert
+    #   column:       str  -- target column name
+    #   columns:      list -- list of column names
+    #   limit:        int  -- max rows to return
+    #   page:         int  -- page number for pagination
+    #   page_size:    int  -- rows per page
+    #   order_by:     str  -- ORDER BY column
+    #   keyword:      str  -- search term
+    #   agg_func:     str  -- COUNT|SUM|AVG|MAX|MIN
+    #   group_by:     str  -- GROUP BY column
+    #   table1:       str  -- first table for JOIN
+    #   table2:       str  -- second table for JOIN
+    #   on:           str  -- JOIN condition
+    #   join_type:    str  -- INNER|LEFT|RIGHT|FULL
+    #   date_column:  str  -- datetime column for trend analysis
+    #   value_column: str  -- numeric column for trend analysis
+    #   column1:      str  -- first column for correlation
+    #   column2:      str  -- second column for correlation
+    #   output_path:  str  -- file path for exports
+    #   confirm:      bool -- required True for truncate
