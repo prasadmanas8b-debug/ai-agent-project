@@ -1,24 +1,21 @@
 """
-Module to simulate and report on photosynthesis.
+Module to simulate and report on the process of photosynthesis.
 
 This module provides a basic simulation of the photosynthetic process, 
 including the light-dependent and light-independent reactions. 
-It also generates a report on the importance, factors affecting, 
-and applications of photosynthesis.
+It also includes a report on the importance and applications of photosynthesis.
 """
-
-import os
 
 class Photosynthesis:
     def __init__(self, light_intensity, temperature, co2_concentration, water_availability):
         """
-        Initialize the photosynthesis simulation.
+        Initialize the photosynthesis process with given parameters.
 
         Args:
-            light_intensity (float): The intensity of light in umol/m^2/s.
-            temperature (float): The temperature in degrees Celsius.
-            co2_concentration (float): The concentration of CO2 in ppm.
-            water_availability (float): The availability of water in mm.
+            light_intensity (float): The intensity of light available for photosynthesis.
+            temperature (float): The temperature at which photosynthesis occurs.
+            co2_concentration (float): The concentration of CO2 available for photosynthesis.
+            water_availability (float): The availability of water for photosynthesis.
         """
         self.light_intensity = light_intensity
         self.temperature = temperature
@@ -27,18 +24,18 @@ class Photosynthesis:
 
     def light_dependent_reactions(self):
         """
-        Simulate the light-dependent reactions.
+        Simulate the light-dependent reactions of photosynthesis.
 
         Returns:
             float: The amount of ATP and NADPH produced.
         """
-        # Assuming a simple linear relationship between light intensity and ATP/NADPH production
-        atp_nadph_production = self.light_intensity * 0.1  # umol/m^2/s
+        # ATP and NADPH production is directly proportional to light intensity
+        atp_nadph_production = self.light_intensity * 0.1  # assuming 10% efficiency
         return atp_nadph_production
 
     def light_independent_reactions(self, atp_nadph_production):
         """
-        Simulate the light-independent reactions.
+        Simulate the light-independent reactions of photosynthesis.
 
         Args:
             atp_nadph_production (float): The amount of ATP and NADPH produced in the light-dependent reactions.
@@ -46,28 +43,29 @@ class Photosynthesis:
         Returns:
             float: The amount of glucose produced.
         """
-        # Assuming a simple linear relationship between ATP/NADPH production and glucose production
-        glucose_production = atp_nadph_production * 0.05  # umol/m^2/s
+        # glucose production is directly proportional to ATP and NADPH production
+        glucose_production = atp_nadph_production * 0.5  # assuming 50% efficiency
         return glucose_production
 
-    def generate_report(self):
+    def report(self):
         """
-        Generate a report on the importance, factors affecting, and applications of photosynthesis.
+        Generate a report on the importance and applications of photosynthesis.
         """
-        report = "Photosynthesis is a vital biological process that occurs in plants, algae, and some bacteria.\n"
-        report += "It is essential for life on Earth, as it provides energy and organic compounds for growth and development.\n"
-        report += "The factors affecting photosynthesis include light intensity, temperature, CO2 concentration, and water availability.\n"
-        report += "Understanding the photosynthetic process can help improve crop yields, develop more efficient agricultural practices, and create new technologies for energy production.\n"
-        return report
+        print("Photosynthesis is a vital biological process that occurs in plants, algae, and some bacteria.")
+        print("It is essential for life on Earth, as it provides energy and organic compounds for growth and development.")
+        print("Understanding the photosynthetic process can help improve crop yields, develop more efficient agricultural practices, and create new technologies for energy production.")
 
 if __name__ == "__main__":
-    # Simulate photosynthesis with default conditions
+    # create an instance of the Photosynthesis class
     photosynthesis = Photosynthesis(light_intensity=100, temperature=25, co2_concentration=400, water_availability=100)
+    
+    # simulate the light-dependent reactions
     atp_nadph_production = photosynthesis.light_dependent_reactions()
+    print(f"ATP and NADPH production: {atp_nadph_production} units")
+    
+    # simulate the light-independent reactions
     glucose_production = photosynthesis.light_independent_reactions(atp_nadph_production)
-    report = photosynthesis.generate_report()
-    print("ATP/NADPH production:", atp_nadph_production, "umol/m^2/s")
-    print("Glucose production:", glucose_production, "umol/m^2/s")
-    print("Report:")
-    print(report)
-    # Note: No mobile or Instagram ID is provided as it is not relevant to the simulation and report generation.
+    print(f"Glucose production: {glucose_production} units")
+    
+    # generate a report on photosynthesis
+    photosynthesis.report()
