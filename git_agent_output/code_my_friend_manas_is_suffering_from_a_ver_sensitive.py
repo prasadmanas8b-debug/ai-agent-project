@@ -1,57 +1,64 @@
 """
 Module to simulate and provide information on micropenis and delayed puberty.
-This module provides a basic simulation of the conditions and offers suggestions for treatment.
+This module does not provide medical advice but rather a simulation of the conditions and potential treatment options.
 """
 
-class Micropenis:
-    def __init__(self, age, medication):
+class MicropenisAndDelayedPuberty:
+    def __init__(self, age, condition):
         """
-        Initialize the Micropenis class.
+        Initialize the class with age and condition.
 
         Args:
             age (int): The age of the individual.
-            medication (str): The medication being taken.
+            condition (str): The condition of the individual (micropenis, delayed puberty, etc.).
         """
         self.age = age
-        self.medication = medication
+        self.condition = condition
 
-    def diagnose(self):
+    def get_treatment_options(self):
         """
-        Diagnose the condition based on age and medication.
-
-        Returns:
-            str: A diagnosis message.
-        """
-        # Check if the individual is taking the correct medication
-        if self.medication.lower() == "horse fire":
-            return "The medication 'horse fire' is not a standard treatment for micropenis. Consult a specialist for proper diagnosis and treatment."
-        else:
-            return "Consult a specialist for proper diagnosis and treatment."
-
-    def suggest_treatment(self):
-        """
-        Suggest treatment options based on age and condition.
+        Get potential treatment options based on age and condition.
 
         Returns:
-            str: A treatment suggestion message.
+            list: A list of potential treatment options.
         """
-        # Check if the individual is a teenager
-        if self.age < 20:
-            return "Hormonal therapy, such as testosterone replacement, may be effective in stimulating penile growth. Consult a specialist for more information."
-        else:
-            return "Surgical intervention, including procedures to increase penis size, may be considered in severe cases. However, these are controversial and complex. Consult a specialist for more information."
+        treatment_options = []
+        if self.age < 20 and self.condition == "micropenis":
+            treatment_options.append("Hormonal therapy")
+        if self.age < 20 and self.condition == "delayed puberty":
+            treatment_options.append("Testosterone replacement")
+        if self.age > 18 and self.condition == "micropenis":
+            treatment_options.append("Surgical intervention")
+        return treatment_options
+
+    def get_lifestyle_modifications(self):
+        """
+        Get potential lifestyle modifications to manage the condition.
+
+        Returns:
+            list: A list of potential lifestyle modifications.
+        """
+        lifestyle_modifications = []
+        lifestyle_modifications.append("Regular exercise")
+        lifestyle_modifications.append("Healthy diet")
+        lifestyle_modifications.append("Stress management")
+        return lifestyle_modifications
 
 def main():
-    # Create a Micropenis object for Manas
-    manas = Micropenis(19, "horse fire")
+    # Create an instance of the class
+    manas = MicropenisAndDelayedPuberty(19, "micropenis")
 
-    # Diagnose Manas' condition
-    diagnosis = manas.diagnose()
-    print(diagnosis)
+    # Get treatment options
+    treatment_options = manas.get_treatment_options()
+    print("Treatment options for Manas:")
+    for option in treatment_options:
+        print(option)
 
-    # Suggest treatment options for Manas
-    treatment = manas.suggest_treatment()
-    print(treatment)
+    # Get lifestyle modifications
+    lifestyle_modifications = manas.get_lifestyle_modifications()
+    print("\nLifestyle modifications for Manas:")
+    for modification in lifestyle_modifications:
+        print(modification)
 
 if __name__ == "__main__":
     main()
