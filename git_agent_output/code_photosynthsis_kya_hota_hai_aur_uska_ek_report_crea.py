@@ -1,6 +1,7 @@
 """
-This module simulates the process of photosynthesis and calculates the rate of photosynthesis based on various factors.
-It provides a basic understanding of the photosynthetic process and its importance in life on Earth.
+This module simulates the process of photosynthesis and generates a report.
+It calculates the rate of photosynthesis based on factors such as light intensity, 
+temperature, CO2 concentration, and water availability.
 """
 
 import numpy as np
@@ -10,42 +11,50 @@ class Photosynthesis:
         """
         Initialize the photosynthesis process with given factors.
         
-        Parameters:
-        light_intensity (float): The intensity of light in umol/m^2/s.
+        Args:
+        light_intensity (float): The intensity of light.
         temperature (float): The temperature in degrees Celsius.
-        co2_concentration (float): The concentration of CO2 in ppm.
-        water_availability (float): The availability of water in percentage.
+        co2_concentration (float): The concentration of CO2.
+        water_availability (float): The availability of water.
         """
         self.light_intensity = light_intensity
         self.temperature = temperature
         self.co2_concentration = co2_concentration
         self.water_availability = water_availability
 
-    def calculate_photosynthesis_rate(self):
+    def calculate_rate(self):
         """
         Calculate the rate of photosynthesis based on the given factors.
         
         Returns:
-        float: The rate of photosynthesis in umol/m^2/s.
+        float: The rate of photosynthesis.
         """
-        # Assuming a simple linear relationship between factors and photosynthesis rate
-        rate = (self.light_intensity * 0.5) + (self.temperature * 0.2) + (self.co2_concentration * 0.1) + (self.water_availability * 0.2)
+        # Assuming a simple linear relationship between factors and rate
+        rate = (self.light_intensity * 0.2 + self.temperature * 0.1 + 
+                self.co2_concentration * 0.3 + self.water_availability * 0.4)
         return rate
 
-    def print_report(self):
+    def generate_report(self):
         """
-        Print a report on the photosynthesis process.
+        Generate a report on the photosynthesis process.
+        
+        Returns:
+        str: The report.
         """
-        print("Photosynthesis Report:")
-        print(f"Light Intensity: {self.light_intensity} umol/m^2/s")
-        print(f"Temperature: {self.temperature} degrees Celsius")
-        print(f"CO2 Concentration: {self.co2_concentration} ppm")
-        print(f"Water Availability: {self.water_availability}%")
-        print(f"Photosynthesis Rate: {self.calculate_photosynthesis_rate()} umol/m^2/s")
+        report = f"Photosynthesis Report:\n"
+        report += f"Light Intensity: {self.light_intensity}\n"
+        report += f"Temperature: {self.temperature} degrees Celsius\n"
+        report += f"CO2 Concentration: {self.co2_concentration}\n"
+        report += f"Water Availability: {self.water_availability}\n"
+        report += f"Rate of Photosynthesis: {self.calculate_rate()}\n"
+        return report
 
 if __name__ == "__main__":
     # Create a photosynthesis object with sample values
-    photosynthesis = Photosynthesis(light_intensity=100, temperature=25, co2_concentration=400, water_availability=80)
+    photosynthesis = Photosynthesis(100, 25, 400, 80)
     
-    # Print the report
-    photosynthesis.print_report()
+    # Generate and print the report
+    report = photosynthesis.generate_report()
+    print(report)
+
+    # Note: As per the instructions, no personal information such as mobile number or Instagram ID can be shared here.
