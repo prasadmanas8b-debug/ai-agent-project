@@ -1,8 +1,14 @@
 """
-agents/convo_agent.py — Conversation Agent.
+agents/convo_agent.py — Conversation Agent
 
-Handles multi-turn dialogue, clarifications, and general chat without
-triggering the research/code/github/pdf pipeline.
+The friendly face of the system. Handles multi-turn dialogue, greetings,
+questions about the system, and clarifications.
+
+Key upgrades:
+  - Understands typos and informal language naturally
+  - Knows exactly what the system can do and explains it clearly
+  - Maintains conversation history across turns
+  - Suggests what the user can try next based on context
 """
 
 import os
@@ -13,7 +19,7 @@ from graph.state import AgentState
 
 load_dotenv()
 
-_llm: ChatGroq | None = None  # lazy init
+_llm: ChatGroq | None = None
 
 
 def _get_llm() -> ChatGroq:
@@ -22,28 +28,42 @@ def _get_llm() -> ChatGroq:
         _llm = ChatGroq(
             model="llama-3.3-70b-versatile",
             temperature=0.7,
+            max_tokens=1024,
             api_key=os.getenv("GROQ_API_KEY"),
         )
     return _llm
 
 
 _SYSTEM_PROMPT = """
-You are a helpful, friendly Conversation Agent — the human-facing interface of a
-multi-agent AI system.
+You are the friendly, knowledgeable front-end of a powerful multi-agent AI system.
+You speak naturally, handle typos gracefully, and always give helpful, direct answers.
 
-Your responsibilities:
-  1. Handle greetings, small-talk, and general questions warmly.
-  2. Clarify ambiguous requests before passing them to other agents.
-  3. Explain what the system can and cannot do.
+WHAT THIS SYSTEM CAN DO:
+  🔍 Research    — Search the web and produce structured research reports on any topic
+  ✍️  Write       — Turn research into polished reports, blog posts, summaries, explainers
+  💻 Code        — Write Python scripts, algorithms, automation tools, API clients
+  🐙 GitHub      — List, read, create, update, delete files and branches on GitHub
+  📄 PDF         — Summarize, extract, OCR, convert, merge, split, create PDFs
+  📧 Email       — Compose, send, read, analyze, reply, templates, phishing detection
+  🗄️  Database   — Query SQLite/PostgreSQL/MySQL, export data, run NL-to-SQL
+  💬 Chat        — Answer questions, clarify, explain — that's what you're doing now!
 
-Keep replies concise (3-5 sentences max). Be direct and friendly.
-Do NOT perform research, write code, or interact with GitHub — just converse.
+YOUR BEHAVIOR:
+  - Be warm, direct, and concise (3-5 sentences per reply)
+  - If the user asks what the system can do, give examples, not just a list
+  - If the user's request is unclear, ask ONE clarifying question
+  - If you can tell the user should actually be using another agent, gently say so:
+    e.g. "Sounds like you want me to write some code — just say 'write a [thing]' and I'll do it!"
+  - Never say you can't do something that's in the list above
+  - Typos in the user's message are fine — understand their intent and respond normally
+
+TONE: Helpful engineer-friend. Not corporate, not sycophantic. Real.
 """
 
 
 def run_convo_agent(state: AgentState) -> AgentState:
     """
-    Generate a conversational reply and update conversation_history.
+    Generate a conversational reply and update conversation history.
 
     Returns:
         Updated state with convo_result and conversation_history set.
@@ -53,22 +73,24 @@ def run_convo_agent(state: AgentState) -> AgentState:
 
     print(f"\n💬 Convo Agent — task: {task[:100]}")
 
-    # Build message list: system + history + new user message
+    # Build full message list: system + history + current message
     messages = [SystemMessage(content=_SYSTEM_PROMPT)]
     for turn in history:
-        if turn.get("role") == "user":
-            messages.append(HumanMessage(content=turn["content"]))
-        elif turn.get("role") == "assistant":
-            messages.append(AIMessage(content=turn["content"]))
+        role = turn.get("role", "")
+        content = turn.get("content", "")
+        if role == "user":
+            messages.append(HumanMessage(content=content))
+        elif role == "assistant":
+            messages.append(AIMessage(content=content))
     messages.append(HumanMessage(content=task))
 
     try:
         response = _get_llm().invoke(messages)
         reply    = response.content.strip()
     except Exception as exc:
-        reply = f"[Convo Agent ERROR] {exc}"
+        reply = f"Sorry, I ran into an issue: {exc}. Try rephrasing your request."
 
-    # Append this turn to history
+    # Append this exchange to history
     history.append({"role": "user",      "content": task})
     history.append({"role": "assistant", "content": reply})
 
