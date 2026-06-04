@@ -1,22 +1,22 @@
 """
 This module provides an explanation of arrays in Python, along with code examples.
-It covers the basics of arrays, including creation, indexing, and manipulation.
+It covers the basics of arrays, including creation, indexing, and common operations.
 """
 
 import numpy as np
 
 def create_array() -> np.ndarray:
     """
-    Creates a sample array using numpy.
+    Creates a sample array with integers from 0 to 9.
     
     Returns:
-    np.ndarray: A 1D array with integers from 0 to 9.
+    np.ndarray: A numpy array with integers from 0 to 9.
     """
     return np.arange(10)
 
 def index_array(array: np.ndarray, index: int) -> int:
     """
-    Retrieves an element from the array at the specified index.
+    Retrieves the element at the specified index from the given array.
     
     Args:
     array (np.ndarray): The input array.
@@ -25,39 +25,37 @@ def index_array(array: np.ndarray, index: int) -> int:
     Returns:
     int: The element at the specified index.
     """
-    try:
-        return array[index]
-    except IndexError:
-        print("Index out of bounds")
-        return None
+    return array[index]
 
-def manipulate_array(array: np.ndarray) -> np.ndarray:
+def modify_array(array: np.ndarray, index: int, value: int) -> np.ndarray:
     """
-    Demonstrates basic array manipulation operations.
+    Modifies the element at the specified index in the given array.
     
     Args:
     array (np.ndarray): The input array.
+    index (int): The index of the element to modify.
+    value (int): The new value for the element.
     
     Returns:
     np.ndarray: The modified array.
     """
-    # Append a new element to the array
-    array = np.append(array, 10)
-    
-    # Insert an element at a specific position
-    array = np.insert(array, 5, 20)
-    
-    # Remove the first occurrence of an element
-    array = np.delete(array, np.where(array == 5))
-    
+    array[index] = value
     return array
 
-if __name__ == "__main__":
+def main():
+    # Create a sample array
     array = create_array()
     print("Original array:", array)
     
-    index = 3
-    print("Element at index", index, ":", index_array(array, index))
+    # Retrieve an element from the array
+    index = 5
+    element = index_array(array, index)
+    print(f"Element at index {index}: {element}")
     
-    modified_array = manipulate_array(array)
+    # Modify an element in the array
+    new_value = 10
+    modified_array = modify_array(array, index, new_value)
     print("Modified array:", modified_array)
+
+if __name__ == "__main__":
+    main()
