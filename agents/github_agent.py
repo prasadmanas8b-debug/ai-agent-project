@@ -1,8 +1,14 @@
 """
-agents/github_agent.py — GitHub Agent.
+agents/github_agent.py — GitHub Agent
 
-Translates natural language tasks into GitHub API actions via an LLM.
-All output files are saved inside git_agent_output/ (enforced in github_tools).
+Performs any GitHub operation from natural language. Understands informal
+phrasing and typos — "lst files in repo" → list_files, "mak a branch" → create_branch.
+
+Key upgrades:
+  - Typo-tolerant intent understanding via LLM
+  - Validates required fields before executing actions
+  - Path enforcement: all writes go to git_agent_output/
+  - Clear, informative result messages
 """
 
 import os
@@ -25,7 +31,7 @@ load_dotenv()
 
 OUTPUT_FOLDER = "git_agent_output"
 
-_llm: ChatGroq | None = None  # lazy init
+_llm: ChatGroq | None = None
 
 
 def _get_llm() -> ChatGroq:
@@ -40,87 +46,90 @@ def _get_llm() -> ChatGroq:
 
 
 _SYSTEM_PROMPT = f"""
-You are a GitHub Agent. Your ONLY job is to perform actions on a GitHub repository.
-You do NOT research topics. You do NOT write reports.
+You are a GitHub Agent. You translate natural language tasks into GitHub API calls.
+Understand the intent even if the request has typos or informal phrasing.
 
-IMPORTANT: When saving any file, ALWAYS prefix the path with "{OUTPUT_FOLDER}/".
+IMPORTANT: Any file path for writes MUST start with "{OUTPUT_FOLDER}/".
 
-Given a task, respond with a single JSON object (no markdown, no explanation).
+Respond with a single valid JSON object (no markdown, no explanation).
 
-Available actions:
+AVAILABLE ACTIONS:
 
-1. create_file
-   {{"action": "create_file", "path": "...", "content": "...", "commit_message": "..."}}
+create_or_update_file  ← DEFAULT for saving any file (creates or updates automatically)
+  {{"action": "create_or_update_file", "path": "{OUTPUT_FOLDER}/filename.ext", "content": "...", "commit_message": "..."}}
 
-2. update_file
-   {{"action": "update_file", "path": "...", "content": "...", "commit_message": "..."}}
+list_files
+  {{"action": "list_files", "folder_path": "agents"}}
+  Use "" or "." for the root directory.
 
-3. create_or_update_file  ← use when unsure if file exists
-   {{"action": "create_or_update_file", "path": "...", "content": "...", "commit_message": "..."}}
+read_file
+  {{"action": "read_file", "path": "{OUTPUT_FOLDER}/filename.ext"}}
 
-4. list_files
-   {{"action": "list_files", "folder_path": ""}}
+create_branch
+  {{"action": "create_branch", "branch_name": "feature/my-branch", "source_branch": "main"}}
 
-5. create_branch
-   {{"action": "create_branch", "branch_name": "...", "source_branch": "main"}}
+delete_file
+  {{"action": "delete_file", "path": "{OUTPUT_FOLDER}/filename.ext", "commit_message": "Remove file"}}
 
-6. read_file
-   {{"action": "read_file", "path": "..."}}
+unknown  ← use only if you truly cannot understand the request
+  {{"action": "unknown", "reason": "explanation"}}
 
-7. delete_file
-   {{"action": "delete_file", "path": "...", "commit_message": "..."}}
+TYPO EXAMPLES:
+  "lst files in agents"          → list_files, folder_path="agents"
+  "reed the report file"         → read_file
+  "mak a new branch called dev"  → create_branch, branch_name="dev"
+  "sav this report to github"    → create_or_update_file
+  "delet the old test file"      → delete_file
 
-8. unknown
-   {{"action": "unknown", "reason": "..."}}
-
-Rules:
-- Respond with ONLY valid JSON. No markdown. No explanation.
-- Always save output files under "{OUTPUT_FOLDER}/" prefix.
-- Infer a sensible commit_message if not given.
+RULES:
+  - Always output ONLY valid JSON. No markdown.
+  - Infer a sensible commit_message from context if not given.
+  - Never invent file content — use what's provided in the task.
+  - If report content is given, use it as the "content" field verbatim.
 """
 
 
 def _strip_fences(raw: str) -> str:
-    """Remove optional markdown code fences from LLM JSON output."""
+    """Remove optional markdown fences from LLM JSON output."""
     raw = raw.strip()
     if raw.startswith("```"):
         parts = raw.split("```")
         raw   = parts[1] if len(parts) > 1 else raw
-        if raw.startswith("json"):
+        if raw.lower().startswith("json"):
             raw = raw[4:]
     return raw.strip()
 
 
-def _execute_action(action: str, params: dict) -> str:
-    """Dispatch the parsed action to the appropriate github_tools function."""
+def _execute(action: str, p: dict) -> str:
+    """Dispatch a parsed action to the correct github_tools function."""
     try:
-        if action == "create_file":
-            return create_file(params["path"], params.get("content", ""), params.get("commit_message", "Add file"))
+        if action == "create_or_update_file":
+            return create_or_update_file(p["path"], p.get("content", ""), p.get("commit_message", "Save via GitHub Agent"))
+        elif action == "create_file":
+            return create_file(p["path"], p.get("content", ""), p.get("commit_message", "Add file"))
         elif action == "update_file":
-            return update_file(params["path"], params.get("content", ""), params.get("commit_message", "Update file"))
-        elif action == "create_or_update_file":
-            return create_or_update_file(params["path"], params.get("content", ""), params.get("commit_message", "Save file"))
+            return update_file(p["path"], p.get("content", ""), p.get("commit_message", "Update file"))
         elif action == "list_files":
-            return list_files(params.get("folder_path", ""))
-        elif action == "create_branch":
-            return create_branch(params["branch_name"], params.get("source_branch", "main"))
+            return list_files(p.get("folder_path", ""))
         elif action == "read_file":
-            return read_file(params["path"])
+            return read_file(p["path"])
+        elif action == "create_branch":
+            return create_branch(p["branch_name"], p.get("source_branch", "main"))
         elif action == "delete_file":
-            return delete_file(params["path"], params.get("commit_message", "Delete file"))
+            return delete_file(p["path"], p.get("commit_message", "Delete file"))
         elif action == "unknown":
-            return f"⚠️ GitHub Agent: unknown action. Reason: {params.get('reason', 'N/A')}"
+            return f"⚠️ GitHub Agent: could not understand request — {p.get('reason', 'N/A')}"
         else:
             return f"⚠️ GitHub Agent: unrecognized action '{action}'"
     except KeyError as exc:
         return f"❌ GitHub Agent: missing required field {exc} for action '{action}'"
     except Exception as exc:
-        return f"❌ GitHub Agent: unexpected error during '{action}': {exc}"
+        return f"❌ GitHub Agent: error during '{action}': {exc}"
 
 
 def run_github_agent(state: AgentState) -> AgentState:
     """
-    Parse the task, call the appropriate GitHub operation, and return updated state.
+    Parse the task and execute the appropriate GitHub operation.
 
     Returns:
         Updated state with github_result set.
@@ -128,9 +137,10 @@ def run_github_agent(state: AgentState) -> AgentState:
     task         = state.get("task", "")
     final_report = state.get("final_report", "")
 
+    # Include any report content so the LLM can use it as file content
     user_message = task
     if final_report:
-        user_message += f"\n\n[REPORT CONTENT TO SAVE]:\n{final_report}"
+        user_message += f"\n\n[CONTENT TO SAVE]:\n{final_report}"
 
     print(f"\n🐙 GitHub Agent — task: {task[:120]}")
 
@@ -139,19 +149,20 @@ def run_github_agent(state: AgentState) -> AgentState:
             SystemMessage(content=_SYSTEM_PROMPT),
             HumanMessage(content=user_message),
         ])
-        action_obj = json.loads(_strip_fences(response.content))
+        raw        = _strip_fences(response.content)
+        action_obj = json.loads(raw)
     except json.JSONDecodeError as exc:
-        msg = f"❌ GitHub Agent: failed to parse LLM JSON: {exc}"
+        msg = f"❌ GitHub Agent: could not parse LLM response as JSON: {exc}"
         print(msg)
         return {**state, "github_result": msg}
     except Exception as exc:
-        msg = f"❌ GitHub Agent: LLM call failed: {exc}"
+        msg = f"❌ GitHub Agent: LLM error: {exc}"
         print(msg)
         return {**state, "github_result": msg}
 
     action = action_obj.get("action", "unknown")
     print(f"🔧 GitHub Agent — action: {action} | path: {action_obj.get('path', 'N/A')}")
 
-    result = _execute_action(action, action_obj)
+    result = _execute(action, action_obj)
     print(f"📬 GitHub Agent — {result[:200]}")
     return {**state, "github_result": result}
