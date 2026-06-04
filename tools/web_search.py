@@ -1,9 +1,8 @@
 """
-tools/web_search.py — Member 2 owns this file
-AI Agent Project | Phase 1
+tools/web_search.py — Web search utility.
 
-Provides search_web() — called by research_agent.py to search the web.
-Uses Tavily API under the hood.
+Wraps the Tavily API to provide clean, formatted search results
+for the Research Agent and any other agent that needs web data.
 """
 
 import os
@@ -12,106 +11,77 @@ from tavily import TavilyClient
 
 load_dotenv()
 
-# ── Tavily client setup ───────────────────────────────────────────────────────
-_client = None
+_client: TavilyClient | None = None  # lazy init
+
 
 def _get_client() -> TavilyClient:
-    """Lazy-load the Tavily client (only created once)."""
     global _client
     if _client is None:
         api_key = os.getenv("TAVILY_API_KEY")
         if not api_key:
-            raise EnvironmentError("❌ TAVILY_API_KEY not found in .env")
+            raise EnvironmentError("TAVILY_API_KEY not found in .env")
         _client = TavilyClient(api_key=api_key)
     return _client
 
 
-# ── Main function used by research_agent.py ──────────────────────────────────
 def search_web(query: str, max_results: int = 5) -> str:
     """
-    Search the web for a given query and return results as a formatted string.
+    Search the web and return formatted results as a string.
 
     Args:
-        query       (str): The search query.
-        max_results (int): How many results to return (default 5).
+        query:       The search query.
+        max_results: Number of results to return (default 5).
 
     Returns:
-        str: Formatted search results ready for the agent to read.
-
-    Example:
-        results = search_web("LangChain agents tutorial")
-        print(results)
+        Formatted string with a quick answer + individual results.
+        Returns an error message string on failure.
     """
     print(f"🔎  Searching: {query}")
-
     try:
-        client  = _get_client()
-        response = client.search(
+        response = _get_client().search(
             query=query,
             max_results=max_results,
-            search_depth="advanced",       # deeper = better results
-            include_answer=True,           # get a quick summary answer too
+            search_depth="advanced",
+            include_answer=True,
+        )
+    except Exception as exc:
+        return f"❌ Search failed for '{query}': {exc}"
+
+    parts = []
+
+    if response.get("answer"):
+        parts.append(f"📌 Quick Answer:\n{response['answer']}\n")
+
+    results = response.get("results", [])
+    if not results:
+        return "No results found."
+
+    parts.append(f"🌐 Top {len(results)} Results:\n")
+    for i, r in enumerate(results, 1):
+        content = r.get("content", "").strip()
+        if len(content) > 400:
+            content = content[:400] + "…"
+        parts.append(
+            f"[{i}] {r.get('title', 'No title')}\n"
+            f"    Source: {r.get('url', '')}\n"
+            f"    {content}\n"
         )
 
-        # ── Format results into clean readable text ───────────────────────────
-        parts = []
-
-        # Tavily quick answer (if available)
-        if response.get("answer"):
-            parts.append(f"📌 Quick Answer:\n{response['answer']}\n")
-
-        # Individual search results
-        results = response.get("results", [])
-        if not results:
-            return "No results found for this query."
-
-        parts.append(f"🌐 Top {len(results)} Results:\n")
-        for i, result in enumerate(results, 1):
-            title   = result.get("title",   "No title")
-            url     = result.get("url",     "")
-            content = result.get("content", "").strip()
-
-            # Trim content to avoid overloading the agent
-            if len(content) > 400:
-                content = content[:400] + "..."
-
-            parts.append(
-                f"[{i}] {title}\n"
-                f"    Source: {url}\n"
-                f"    {content}\n"
-            )
-
-        return "\n".join(parts)
-
-    except Exception as e:
-        error_msg = f"❌ Search failed for '{query}': {str(e)}"
-        print(error_msg)
-        return error_msg
+    return "\n".join(parts)
 
 
-# ── Bonus: search and return raw list (useful for Member 1's agent) ──────────
 def search_web_raw(query: str, max_results: int = 5) -> list[dict]:
     """
-    Same as search_web() but returns raw list of result dicts.
-    Useful if you want to process results yourself.
+    Same as search_web() but returns a raw list of result dicts.
 
-    Returns:
-        list of dicts with keys: title, url, content, score
+    Useful when the caller needs structured data rather than formatted text.
     """
     try:
-        client   = _get_client()
-        response = client.search(query=query, max_results=max_results, search_depth="advanced")
-        return response.get("results", [])
-    except Exception as e:
-        print(f"❌ Raw search failed: {e}")
+        return _get_client().search(
+            query=query,
+            max_results=max_results,
+            search_depth="advanced",
+        ).get("results", [])
+    except Exception as exc:
+        print(f"❌ Raw search failed for '{query}': {exc}")
         return []
-
-
-# ── Quick test ────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    test_query = "What are LangChain agents?"
-    print(f"\nTesting web_search.py with: '{test_query}'\n")
-    print("─" * 50)
-    result = search_web(test_query, max_results=3)
-    print(result)
-    print("\n✅ web_search.py is working!")
