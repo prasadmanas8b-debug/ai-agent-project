@@ -1,77 +1,100 @@
 """
-agents/dynamic_research_agent.py
-Expert research agent — searches the web 3x and writes a structured report.
-Uses lazy initialization so LLM is only created when first called (testable).
+agents/dynamic_research_agent.py — Research Agent.
+
+Uses a LangChain ReAct agent backed by Groq (llama-3.3-70b) and Tavily web search
+to research any topic and return a structured markdown report.
 """
+
 import os
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, SystemMessage
-from langgraph.prebuilt import create_react_agent
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import PromptTemplate
 
 load_dotenv()
 
-_tools = None
-_llm   = None
-_agent = None
+# ── Lazy singletons ───────────────────────────────────────────────────────────
+_agent: AgentExecutor | None = None
 
-def _get_tools():
-    global _tools
-    if _tools is None:
-        try:
-            from langchain_tavily import TavilySearch
-            _tools = [TavilySearch(max_results=5)]
-        except Exception as e:
-            print(f"⚠️  Tavily unavailable: {e}. Running without web search.")
-            _tools = []
-    return _tools
 
-def _get_llm():
-    global _llm
-    if _llm is None:
-        _llm = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct", temperature=0.4, max_tokens=4096)
-    return _llm
-
-def _get_agent():
+def _get_agent() -> AgentExecutor:
+    """Build (and cache) the ReAct agent on first use."""
     global _agent
-    if _agent is None:
-        _agent = create_react_agent(model=_get_llm(), tools=_get_tools())
+    if _agent is not None:
+        return _agent
+
+    llm = ChatGroq(
+        model="llama-3.3-70b-versatile",
+        temperature=0.2,
+        api_key=os.getenv("GROQ_API_KEY"),
+    )
+    tools = [TavilySearchResults(max_results=5, api_key=os.getenv("TAVILY_API_KEY"))]
+
+    prompt = PromptTemplate.from_template("""
+You are a thorough research assistant. Research the given topic and produce a
+well-structured markdown report with these sections:
+
+## Overview
+2-3 sentence introduction.
+
+## Key Findings
+- Bullet points of the most important facts.
+
+## Details
+Deeper explanation with examples.
+
+## Conclusion
+1-2 sentence wrap-up.
+
+Available tools: {tools}
+Tool names: {tool_names}
+
+Use this format:
+Question: the input question
+Thought: what to do
+Action: tool name
+Action Input: input to the tool
+Observation: tool result
+... (repeat as needed)
+Thought: I now have enough to write the report
+Final Answer: [the full markdown report]
+
+Question: {input}
+Thought: {agent_scratchpad}
+""")
+
+    _agent = AgentExecutor(
+        agent=create_react_agent(llm, tools, prompt),
+        tools=tools,
+        verbose=False,
+        handle_parsing_errors=True,
+        max_iterations=6,
+    )
     return _agent
 
-_SYSTEM_PROMPT = """You are an expert research analyst, similar to Perplexity AI.
 
-SEARCH STRATEGY — always search 3 times with different angles:
-1. First  → broad overview
-2. Second → recent news, statistics, latest developments
-3. Third  → specific details, examples, expert opinions
+def run_research_agent(task: str) -> str:
+    """
+    Research a topic and return a markdown report string.
 
-STRUCTURE — pick subheadings that fit the topic:
-- Person:      Early Life | Rise to Prominence | Achievements | Controversies | Legacy
-- Technology:  What It Is | How It Works | Who Uses It | Limitations | Future Outlook
-- Concept:     Core Idea | History | How It Works | Applications | Open Questions
-- Event:       Background | What Happened | Key Players | Impact | Long-Term Effects
-- Comparison:  At a Glance | Option A | Option B | Head-to-Head | Verdict
-- Other:       use your best judgment
+    Args:
+        task: The research question or topic.
 
-WRITING RULES:
-- Full paragraphs under each heading (no bullet dumps)
-- Use ## for subheadings
-- Include real facts, numbers, names, dates
-- Minimum 450 words
-- End with ## Bottom Line — one paragraph summary
-
-BANNED headings: Overview | Key Findings | Detailed Analysis | Conclusion
-"""
-
-def run_research_agent(topic: str) -> str:
-    result = _get_agent().invoke({
-        "messages": [
-            SystemMessage(content=_SYSTEM_PROMPT),
-            HumanMessage(content=f"Research this topic and write the full report: {topic}"),
-        ]
-    })
-    return result["messages"][-1].content
-
-if __name__ == "__main__":
-    topic = input("Enter a research topic: ").strip()
-    print(run_research_agent(topic))
+    Returns:
+        Markdown-formatted research report, or an error message.
+    """
+    print(f"\n🔍 Research Agent — task: {task[:100]}")
+    try:
+        result = _get_agent().invoke({"input": task})
+        # AgentExecutor returns {"output": "..."} or {"messages": [...]}
+        if isinstance(result, dict):
+            output = result.get("output") or result.get("messages", [{}])[-1].get("content", "")
+        else:
+            output = str(result)
+        print(f"🔍 Research Agent — done ({len(output)} chars)")
+        return output
+    except Exception as exc:
+        msg = f"[Research Agent ERROR] {exc}"
+        print(msg)
+        return msg
