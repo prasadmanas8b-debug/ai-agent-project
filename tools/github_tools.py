@@ -1,8 +1,10 @@
 """
-tools/github_tools.py
-Low-level GitHub helpers used by the GitHub Agent.
-ALL write operations (create/update/delete) are locked to git_agent_output/.
+tools/github_tools.py — Low-level GitHub helpers.
+
+All write operations (create / update / delete) are path-locked to
+git_agent_output/ to prevent accidental repo pollution.
 """
+
 import os
 from github import Github, GithubException
 from dotenv import load_dotenv
@@ -11,139 +13,151 @@ load_dotenv()
 
 OUTPUT_FOLDER = "git_agent_output"
 
+_repo = None  # lazy init — one connection per process
+
+
 def _get_repo():
-    token     = os.getenv("GITHUB_TOKEN")
-    repo_name = os.getenv("GITHUB_REPO")
-    if not token:
-        raise ValueError("GITHUB_TOKEN not found in .env")
-    if not repo_name:
-        raise ValueError("GITHUB_REPO not found in .env")
-    return Github(token).get_repo(repo_name)
+    """Return (and cache) the authenticated PyGithub repo object."""
+    global _repo
+    if _repo is None:
+        token     = os.getenv("GITHUB_TOKEN")
+        repo_name = os.getenv("GITHUB_REPO")
+        if not token:
+            raise EnvironmentError("GITHUB_TOKEN not set in .env")
+        if not repo_name:
+            raise EnvironmentError("GITHUB_REPO not set in .env")
+        _repo = Github(token).get_repo(repo_name)
+    return _repo
+
 
 def _safe_path(path: str) -> str:
     """
-    Hard-enforce that any write/read path lives inside git_agent_output/.
+    Enforce that any write/read path lives inside git_agent_output/.
+
     Strips any existing folder prefix and re-attaches the correct one.
+    Logs a warning when the path is silently redirected.
     """
-    filename = os.path.basename(path.strip("/")) if "/" in path else path.strip()
+    path     = path.strip("/").strip()
+    filename = os.path.basename(path) if "/" in path else path
     if not filename:
         filename = "output.md"
     result = f"{OUTPUT_FOLDER}/{filename}"
     if result != path:
-        print(f"[github_tools] 🔒 Path redirected: '{path}' → '{result}'")
+        print(f"[github_tools] ⚠️  Path redirected: '{path}' → '{result}'")
     return result
 
 
+# ── Public API ────────────────────────────────────────────────────────────────
+
 def create_file(path: str, content: str, commit_message: str) -> str:
+    """Create a new file. Returns an error string if it already exists."""
     path = _safe_path(path)
     try:
-        repo = _get_repo()
-        repo.create_file(path, commit_message, content)
-        return f"✅ File '{path}' created — commit: '{commit_message}'"
-    except GithubException as e:
-        if e.status == 422:
-            return f"❌ File '{path}' already exists. Use update_file() instead."
-        return f"❌ GitHub error creating '{path}': {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error creating file: {e}"
+        _get_repo().create_file(path, commit_message, content)
+        return f"✅ '{path}' created — {commit_message}"
+    except GithubException as exc:
+        if exc.status == 422:
+            return f"❌ '{path}' already exists — use update_file() instead."
+        return f"❌ GitHub error (create): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (create): {exc}"
 
 
 def update_file(path: str, content: str, commit_message: str) -> str:
+    """Update an existing file. Returns an error string if not found."""
     path = _safe_path(path)
     try:
-        repo     = _get_repo()
-        existing = repo.get_contents(path)
-        repo.update_file(path, commit_message, content, existing.sha)
-        return f"✅ File '{path}' updated — commit: '{commit_message}'"
-    except GithubException as e:
-        if e.status == 404:
-            return f"❌ File '{path}' not found. Use create_file() instead."
-        return f"❌ GitHub error updating '{path}': {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error updating file: {e}"
+        existing = _get_repo().get_contents(path)
+        _get_repo().update_file(path, commit_message, content, existing.sha)
+        return f"✅ '{path}' updated — {commit_message}"
+    except GithubException as exc:
+        if exc.status == 404:
+            return f"❌ '{path}' not found — use create_file() instead."
+        return f"❌ GitHub error (update): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (update): {exc}"
 
 
 def create_or_update_file(path: str, content: str, commit_message: str) -> str:
-    """Smart upsert — creates if not exists, updates if it does."""
+    """Upsert: creates if absent, updates if present."""
     path = _safe_path(path)
     try:
         repo = _get_repo()
         try:
             existing = repo.get_contents(path)
             repo.update_file(path, commit_message, content, existing.sha)
-            return f"✅ File '{path}' updated — commit: '{commit_message}'"
-        except GithubException as e:
-            if e.status == 404:
+            return f"✅ '{path}' updated — {commit_message}"
+        except GithubException as exc:
+            if exc.status == 404:
                 repo.create_file(path, commit_message, content)
-                return f"✅ File '{path}' created — commit: '{commit_message}'"
+                return f"✅ '{path}' created — {commit_message}"
             raise
-    except GithubException as e:
-        return f"❌ GitHub error upserting '{path}': {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error upserting: {e}"
+    except GithubException as exc:
+        return f"❌ GitHub error (upsert): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (upsert): {exc}"
 
 
 def list_files(folder_path: str = "") -> str:
+    """List files/folders at the given path (default: repo root)."""
     try:
-        repo     = _get_repo()
-        contents = repo.get_contents(folder_path)
+        contents = _get_repo().get_contents(folder_path)
         if not contents:
-            return f"📂 Folder '{folder_path or 'root'}' is empty."
-        lines = []
-        for item in contents:
-            icon = "📄" if item.type == "file" else "📁"
-            lines.append(f"  {icon} {item.name}  ({item.type})")
-        label = folder_path or "root"
-        return f"📂 Files in '{label}':\n" + "\n".join(lines)
-    except GithubException as e:
-        if e.status == 404:
-            return f"❌ Folder '{folder_path}' not found."
-        return f"❌ GitHub error listing files: {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error listing files: {e}"
+            return f"📂 '{folder_path or 'root'}' is empty."
+        lines = [
+            f"  {'📄' if item.type == 'file' else '📁'} {item.name}"
+            for item in contents
+        ]
+        return f"📂 '{folder_path or 'root'}':\n" + "\n".join(lines)
+    except GithubException as exc:
+        if exc.status == 404:
+            return f"❌ Path '{folder_path}' not found."
+        return f"❌ GitHub error (list): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (list): {exc}"
 
 
 def create_branch(branch_name: str, source_branch: str = "main") -> str:
+    """Create a new branch from source_branch."""
     try:
-        repo       = _get_repo()
-        source_ref = repo.get_branch(source_branch)
-        repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=source_ref.commit.sha)
+        repo = _get_repo()
+        sha  = repo.get_branch(source_branch).commit.sha
+        repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=sha)
         return f"✅ Branch '{branch_name}' created from '{source_branch}'."
-    except GithubException as e:
-        if e.status == 422:
+    except GithubException as exc:
+        if exc.status == 422:
             return f"❌ Branch '{branch_name}' already exists."
-        if e.status == 404:
+        if exc.status == 404:
             return f"❌ Source branch '{source_branch}' not found."
-        return f"❌ GitHub error creating branch: {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error creating branch: {e}"
+        return f"❌ GitHub error (branch): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (branch): {exc}"
 
 
 def read_file(path: str) -> str:
+    """Read and return the decoded content of a file."""
     path = _safe_path(path)
     try:
-        repo    = _get_repo()
-        content = repo.get_contents(path)
-        decoded = content.decoded_content.decode("utf-8")
-        return f"📄 Content of '{path}':\n\n{decoded}"
-    except GithubException as e:
-        if e.status == 404:
-            return f"❌ File '{path}' not found."
-        return f"❌ GitHub error reading '{path}': {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error reading file: {e}"
+        content = _get_repo().get_contents(path)
+        return f"📄 '{path}':\n\n{content.decoded_content.decode('utf-8')}"
+    except GithubException as exc:
+        if exc.status == 404:
+            return f"❌ '{path}' not found."
+        return f"❌ GitHub error (read): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (read): {exc}"
 
 
 def delete_file(path: str, commit_message: str) -> str:
+    """Delete a file from the repo."""
     path = _safe_path(path)
     try:
-        repo    = _get_repo()
-        content = repo.get_contents(path)
-        repo.delete_file(path, commit_message, content.sha)
-        return f"✅ File '{path}' deleted — commit: '{commit_message}'"
-    except GithubException as e:
-        if e.status == 404:
-            return f"❌ File '{path}' not found. Cannot delete."
-        return f"❌ GitHub error deleting '{path}': {e.data.get('message', str(e))}"
-    except Exception as e:
-        return f"❌ Unexpected error deleting file: {e}"
+        content = _get_repo().get_contents(path)
+        _get_repo().delete_file(path, commit_message, content.sha)
+        return f"✅ '{path}' deleted — {commit_message}"
+    except GithubException as exc:
+        if exc.status == 404:
+            return f"❌ '{path}' not found — cannot delete."
+        return f"❌ GitHub error (delete): {exc.data.get('message', exc)}"
+    except Exception as exc:
+        return f"❌ Unexpected error (delete): {exc}"
