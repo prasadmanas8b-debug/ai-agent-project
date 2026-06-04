@@ -1,461 +1,347 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=200&section=header&text=AI%20Agent%20System&fontSize=56&fontColor=fff&animation=twinkling&fontAlignY=38&desc=Production-Grade%20Multi-Agent%20AI%20%7C%20Research%20%C2%B7%20Code%20%C2%B7%20PDF%20%C2%B7%20Email%20%C2%B7%20GitHub&descAlignY=62&descSize=16" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=200&section=header&text=AI%20Agent%20System&fontSize=56&fontColor=fff&animation=twinkling&fontAlignY=38&desc=Production-Grade%20Multi-Agent%20AI%20%7C%20Research%20%C2%B7%20Code%20%C2%B7%20PDF%20%C2%B7%20Email%20%C2%B7%20GitHub%20%C2%B7%20Database&descAlignY=62&descSize=16" width="100%"/>
 
 <br/>
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Orchestration-00C7B7?style=for-the-badge&logo=graphql&logoColor=white)](https://langchain-ai.github.io/langgraph/)
-[![Groq](https://img.shields.io/badge/Groq-llama--4--scout-F55036?style=for-the-badge&logo=meta&logoColor=white)](https://groq.com)
+[![Groq](https://img.shields.io/badge/Groq-llama--3.3--70b-F55036?style=for-the-badge&logo=meta&logoColor=white)](https://groq.com)
 [![React](https://img.shields.io/badge/React-Frontend-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/prasadmanas8b-debug/ai-agent-project?style=for-the-badge&logo=github&color=fbbf24)](https://github.com/prasadmanas8b-debug/ai-agent-project/stargazers)
 
 <br/>
 
-> **A production-ready Multi-Agent AI system** where specialized agents collaborate under a smart supervisor to research, write code, manage PDFs, handle emails, and interact with GitHub — all orchestrated through a dynamic LangGraph state machine.
+> **A production-ready Multi-Agent AI system** where 8 specialist agents collaborate under a smart supervisor to research, write, generate code, manage PDFs, handle emails, interact with GitHub, and query databases — all orchestrated through a LangGraph state machine.
 >
-> *Think of it as a full AI engineering team running on autopilot.*
+> *Think of it as a full AI engineering team, running on a single command.*
 
 <br/>
 
-[🚀 Quick Start](#-quick-start) · [🧠 Agents](#-agents) · [📄 PDF Agent](#-pdf-agent--43-features) · [📧 Email Agent](#-email-agent--38-features) · [🏗️ Architecture](#️-architecture) · [📡 API Reference](#-api-reference) · [🛣️ Roadmap](#️-roadmap)
+[🚀 Quick Start](#-quick-start) · [🏗️ Architecture](#️-architecture) · [🤖 Agents](#-agents) · [📁 Folder Structure](#-folder-structure) · [🔄 Workflow](#-how-the-workflow-works) · [⚙️ Setup](#️-environment-setup)
 
 </div>
 
 ---
 
-## 📊 System Overview
-
-| Metric | Value |
-|--------|-------|
-| 🤖 Total Agents | **7** (Research, Writer, Coder, GitHub, PDF, Email, Convo) |
-| ⚡ LLM | **Groq · meta-llama/llama-4-scout-17b-16e-instruct** |
-| 📄 PDF Features | **43 handlers** across 14 categories |
-| 📧 Email Features | **38 handlers** across 11 categories |
-| 🧩 Orchestration | **LangGraph** state machine with dynamic routing |
-| 🌐 API | **Flask + FastAPI** dual support |
-| 🎨 Frontend | **React + Tailwind CSS** |
-| 📦 Transport | **SMTP + IMAP** (stdlib, zero extra dependencies) |
-
----
-
-## 🧠 Agents
-
-### Supervisor (Manager Agent)
-The **brain** of the system. Reads the task + current state and decides which agent runs next using a priority-based routing ruleset. Powered by `llama-3.3-70b-versatile` for precise decisions.
-
-```
-task → Supervisor → research | writer | coder | github | pdf | email | convo → Supervisor → FINISH
-```
-
----
-
-### 🔍 Research Agent
-Searches the web via **Tavily API**, synthesizes findings, and writes structured research notes into state.
-
-**Triggers:** tasks containing `research`, `what is`, `explain`, `latest`, `trends`, `history`, `compare`
-
----
-
-### ✍️ Writer Agent
-Transforms research notes into polished, well-structured reports. Handles formatting, tone, and length.
-
-**Triggers:** runs after Research Agent completes, or for direct writing tasks
-
----
-
-### 🧑‍💻 Coder Agent
-Reads research notes or direct task instructions and generates **working Python code**, saving it to `git_agent_output/`.
-
-**Triggers:** tasks containing `code`, `implement`, `build`, `script`, `program`
-
----
-
-### 🐙 GitHub Agent
-Interacts with GitHub — reads repos, lists files, creates/updates files, manages branches. Uses the **PyGitHub** library.
-
-**Triggers:** `github`, `save to repo`, `commit`, `push`, `list files`, `create branch`
-
----
-
-### 📄 PDF Agent
-**43 feature handlers** across 14 categories. See the [full section below](#-pdf-agent--43-features).
-
-**Triggers:** `pdf`, `summarize pdf`, `extract`, `ocr`, `compress`, `watermark`, etc.
-
----
-
-### 📧 Email Agent
-**38 feature handlers** across 11 categories. See the [full section below](#-email-agent--38-features).
-
-**Triggers:** `email`, `inbox`, `compose`, `send`, `reply`, `forward`, `phishing`, `drip campaign`, etc.
-
----
-
-### 💬 Convo Agent
-Handles greetings, small-talk, clarifications, and general chat. Maintains conversation history across turns.
-
-**Triggers:** `hi`, `hello`, `thanks`, `what can you do`, simple one-off questions
-
----
-
-## 📄 PDF Agent — 43 Features
-
-> Full documentation: [`PDF_AGENT_DOCUMENTATION.md`](PDF_AGENT_DOCUMENTATION.md)
-
-<details>
-<summary><b>Core Operations (6)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `read` | Parse PDF — page count, word count, text preview, scanned detection |
-| `create` | Generate PDF from a text prompt (ReportLab code + content plan) |
-| `summarize` | Executive summary, key points, topics, sentiment, document type |
-| `qa` | Q&A over PDF content with source section citations |
-| `translate` | Translate PDF to any language |
-| `extract` | Tables, key-values, named entities, lists |
-
-</details>
-
-<details>
-<summary><b>Text Operations (6)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `search` | Full-text search across all pages with bounding box coordinates |
-| `find_replace` | Find & replace text — returns occurrence count + Python code |
-| `watermark` | Add diagonal watermark text (e.g. CONFIDENTIAL) |
-| `page_numbers` | Add page numbers to all pages |
-| `header_footer` | Add custom header and/or footer |
-| `rewrite` | AI rewrite in a different style/tone |
-
-</details>
-
-<details>
-<summary><b>Page Management (4)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `page_ops` | Rotate, extract, remove, add blank pages — returns modified PDF |
-| `split` | Split by page range — returns array of PDF parts |
-| `merge` | Merge two PDFs (pass `pdf_bytes` + `pdf2_bytes`) |
-| `merge_plan` | AI merge strategy + pypdf code (no file needed) |
-
-</details>
-
-<details>
-<summary><b>Images (2)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `extract_images` | Extract all embedded images as base64 |
-| `pdf_to_images` | Convert each page to PNG/JPG at 2× resolution |
-
-</details>
-
-<details>
-<summary><b>AI-Powered (7)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `classify` | Document type, language, topics, reasoning |
-| `sentiment` | Emotion breakdown, tone, key positive/negative phrases |
-| `ner` | People, orgs, locations, dates, emails, phones, URLs |
-| `compare` | Diff two PDFs — similarity %, unique content, key differences |
-| `autotag` | Auto-tags, categories, department, priority, action required |
-| `reformat` | AI restructure + new ReportLab code |
-| `md_to_pdf` | Generate Markdown + PDF code from a prompt |
-
-</details>
-
-<details>
-<summary><b>Data, Metadata, Security, OCR, Annotations, Optimization, Forms, Accessibility, Batch (18)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `tables_to_csv` | Extract all tables as downloadable CSV |
-| `to_markdown` | Convert PDF content to Markdown |
-| `to_html` | Convert PDF content to semantic HTML5 |
-| `metadata` | Read metadata, suggest improvements, SEO score |
-| `set_metadata` | Write/update title, author, subject, keywords |
-| `protect` | Password-encrypt PDF |
-| `decrypt` | Remove password from PDF |
-| `redact` | Permanently black out sensitive text |
-| `signature` | Generate digital signature code (pyhanko) |
-| `ocr` | Extract text from scanned PDFs via pytesseract |
-| `annotate` | Highlight text, add sticky notes |
-| `bookmarks` | Read bookmarks or auto-generate TOC |
-| `compress` | Lossless compression — reports size reduction % |
-| `repair` | Fix corrupted PDFs via PyMuPDF rebuild |
-| `linearize` | Optimize for fast web view |
-| `forms` | Detect fillable fields, extract values, generate fill code |
-| `accessibility` | WCAG/PDF-UA audit — issues, severity, fixes |
-| `batch` | Generate Python batch processing scripts |
-
-</details>
-
-**Quick example:**
-```python
-from agents.pdf_agent import run_pdf_agent
-
-result = run_pdf_agent({
-    "task":      "Summarize this document",
-    "pdf_mode":  "summarize",
-    "pdf_bytes": open("report.pdf", "rb").read(),
-    # ... other state fields
-})
-import json
-print(json.loads(result["pdf_result"])["summary"])
-```
-
----
-
-## 📧 Email Agent — 38 Features
-
-> Full documentation: [`EMAIL_AGENT_DOCUMENTATION.md`](EMAIL_AGENT_DOCUMENTATION.md)
-
-<details>
-<summary><b>Core Ops (4)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `compose` | Write a new email from a prompt — subject, body, HTML body |
-| `reply` | AI-powered reply with threading support |
-| `forward` | Forward with auto-generated intro note |
-| `send` | Compose + send immediately via SMTP |
-
-</details>
-
-<details>
-<summary><b>AI Writing (8)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `rewrite_tone` | Rewrite for formal / casual / assertive / friendly / empathetic |
-| `resize` | Shorten or expand while preserving meaning |
-| `fix_grammar` | Correct all grammar, spelling, and punctuation |
-| `improve_clarity` | Improve structure, flow, readability score |
-| `translate` | Translate to any language |
-| `suggest_subject` | 5 subject lines with open-rate predictions |
-| `from_bullets` | Convert bullet points to a full email |
-| `match_style` | Mirror the recipient's writing style |
-
-</details>
-
-<details>
-<summary><b>Inbox Management (3)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `read` | Fetch emails from INBOX / Sent / Drafts / Spam via IMAP |
-| `search` | Search by sender, subject, keyword, date |
-| `digest` | AI-powered daily/weekly inbox digest |
-
-</details>
-
-<details>
-<summary><b>Analysis (6)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `summarize` | Summary + action items + deadlines + priority |
-| `summarize_thread` | Full thread summary — participants, timeline, open questions |
-| `extract_actions` | Tasks, deadlines, commitments, follow-ups |
-| `extract_entities` | People, orgs, emails, phones, dates, amounts |
-| `analyze` | Sentiment, intent, urgency, tone, emotion |
-| `classify` | Category, type, labels, priority, calendar flag |
-
-</details>
-
-<details>
-<summary><b>Smart, Templates, Scheduling, Security, Integrations, Bulk, Output (17)</b></summary>
-
-| Mode | Description |
-|------|-------------|
-| `smart_reply` | 3 one-click reply options |
-| `auto_reply` | Out-of-office / auto-reply generator |
-| `follow_up` | Write a follow-up for N days after no reply |
-| `template` | Create reusable templates with `{{placeholders}}` |
-| `mail_merge` | Personalized bulk email + Python CSV code |
-| `drip` | Design a 4-step email sequence with APScheduler code |
-| `ab_test` | 3 A/B subject line variants with predictions |
-| `schedule` | Parse scheduling request → ISO datetime + code |
-| `best_time` | Predict best send time for max open rate |
-| `security_check` | Detect phishing, spam, suspicious links — verdict + score |
-| `sensitive_data` | Find SSNs, credit cards, phone numbers via regex |
-| `gdpr` | GDPR compliance audit — risks, score, required actions |
-| `crm_log` | Extract Salesforce/HubSpot CRM fields |
-| `meeting` | Detect meeting request + generate `.ics` file |
-| `unsubscribe` | Find unsubscribe links + opt-out instructions |
-| `bulk` | Generate IMAP code for bulk delete/archive/mark |
-| `export` | Export as `.eml`, `.txt`, `.html`, `.csv` |
-| `signature` | Professional email signature (plain + HTML) |
-
-</details>
-
-**Quick example:**
-```python
-from agents.email_agent import run_email_agent
-
-result = run_email_agent({
-    "task":          "Write a follow-up email to the investor about Q1 results",
-    "email_mode":    "compose",
-    "email_context": {"to": "investor@vc.com", "tone": "formal"},
-    # ... other state fields
-})
-import json
-r = json.loads(result["email_result"])
-print(r["subject"])
-print(r["body"])
-```
+## 📊 System at a Glance
+
+| Property | Value |
+|---|---|
+| 🤖 Agents | **8** — Research, Writer, Coder, GitHub, PDF, Email, Convo, Database |
+| 🧠 LLM | **Groq · llama-3.3-70b-versatile** (supervisor, coder, research, writer, convo, github, database) |
+| 🦙 LLM (heavy agents) | **Groq · llama-4-scout-17b** (PDF, Email — 100+ feature handlers) |
+| 🔍 Web Search | **Tavily API** with LLM fallback if unavailable |
+| 🧩 Orchestration | **LangGraph** `StateGraph` — supervisor-routed pipeline |
+| 📄 PDF Features | **100+** handlers across 20 categories |
+| 📧 Email Features | **80+** handlers across 18 categories |
+| 🗄️ Database | **SQLite / PostgreSQL / MySQL** — 42+ operations |
+| 🌐 API | **FastAPI** endpoints for PDF and Email agents |
+| 🎨 Frontend | **React + Tailwind CSS** (EmailAgent.jsx, PDFAgent.jsx) |
+| 🔒 Safety | GitHub writes locked to `git_agent_output/`, DB read-only mode |
+| 🛡️ Typo Tolerance | All agents understand misspellings and informal phrasing |
 
 ---
 
 ## 🏗️ Architecture
 
+The system uses a **Supervisor → Agent → Supervisor** loop powered by LangGraph.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        User Input                           │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Supervisor Agent                          │
-│         (llama-3.3-70b · priority-based routing)           │
-└──┬──────┬──────┬──────┬──────┬──────┬──────┬───────────────┘
-   │      │      │      │      │      │      │
-   ▼      ▼      ▼      ▼      ▼      ▼      ▼
-Research Writer Coder GitHub  PDF   Email  Convo
-Agent   Agent  Agent  Agent  Agent  Agent  Agent
-   │      │      │      │      │      │      │
-   └──────┴──────┴──────┴──────┴──────┴──────┘
-                      │
-                      ▼
-              Supervisor → FINISH
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│              AgentState (shared whiteboard)                 │
-│  task · research_notes · final_report · code_result        │
-│  github_result · pdf_result · email_result · convo_result  │
-│  pdf_bytes · pdf2_bytes · pdf_mode · pdf_text              │
-│  email_mode · email_context · conversation_history        │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         User Input                              │
+│              "Research AI trends and write a report"            │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    🧠 SUPERVISOR                                 │
+│              (agents/manager_agent.py)                          │
+│                                                                 │
+│  • Reads full task text + state                                 │
+│  • Understands intent even with typos / vague language          │
+│  • Decides: which agent runs next?                              │
+│  • Returns ONE word: research | writer | coder | … | FINISH    │
+└────────┬──────────────────────────────────────────┬────────────┘
+         │  routes to                               │  loops back
+         ▼                                          │
+┌────────────────────────────────────────────┐      │
+│              SPECIALIST AGENTS              │      │
+│                                            │      │
+│  🔍 research   ──→  research_notes         │      │
+│  ✍️  writer     ──→  final_report           │──────┘
+│  💻 coder      ──→  code_result            │
+│  🐙 github     ──→  github_result          │
+│  📄 pdf        ──→  pdf_result             │
+│  📧 email      ──→  email_result           │
+│  💬 convo      ──→  convo_result           │
+│  🗄️  database  ──→  db_result              │
+└────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    ✅ FINISH                                     │
+│              Results printed + saved to outputs/                │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### State Machine Flow
+### Key Design Principles
 
-```python
-# LangGraph compiles to a directed cyclic graph
-graph = StateGraph(AgentState)
-graph.add_node("supervisor", supervisor_node)
-graph.add_node("research",   research_node)
-# ... all 7 agents
-graph.set_entry_point("supervisor")
-graph.add_conditional_edges("supervisor", route, {
-    "research": "research", "writer": "writer",
-    "coder":    "coder",    "github": "github",
-    "pdf":      "pdf",      "email":  "email",
-    "convo":    "convo",    "FINISH": END,
-})
-# Each agent loops back to supervisor
-```
+- **Single shared state** — `AgentState` (a TypedDict) is the only thing passed between agents. Each agent reads the full state and writes only its own field.
+- **Supervisor is the only router** — no agent decides what happens next. Only the Supervisor does.
+- **Loop until done** — every agent returns to the Supervisor after finishing. The Supervisor decides if another agent is needed or if it's time to FINISH.
+- **Typo-tolerant** — the Supervisor uses an LLM to *understand intent*, not keyword matching. Misspellings and vague prompts are handled gracefully.
+- **Graceful fallbacks** — if Tavily is unavailable, Research falls back to LLM knowledge. If email/DB credentials aren't set, agents mock the operation and explain why.
 
 ---
 
-## 🗂️ Project Structure
+## 📁 Folder Structure
 
 ```
 ai-agent-project/
 │
-├── 🤖 agents/
-│   ├── manager_agent.py          # Supervisor — routing + orchestration
-│   ├── dynamic_research_agent.py # Web research via Tavily
-│   ├── writer_agent.py           # Report + content generation
-│   ├── coder_agent.py            # Python code generation
-│   ├── github_agent.py           # GitHub file/branch operations
-│   ├── pdf_agent.py              # PDF Agent — 43 features
-│   ├── email_agent.py            # Email Agent — 38 features
-│   └── convo_agent.py            # Conversational chat
+├── main.py                          # ← Entry point. Run this to start the system.
+├── requirements.txt                 # All Python dependencies
+├── .env.example                     # Template — copy to .env and fill in your keys
+├── .gitignore
+├── README.md                        # This file
+├── DOCUMENTATION.md                 # Full technical documentation
 │
-├── 🔧 tools/
-│   ├── web_search.py             # Tavily web search
-│   ├── file_saver.py             # File I/O utilities
-│   ├── dynamic_file_saver.py     # Dynamic file saving
-│   └── github_tools.py           # GitHub API helpers
+├── graph/                           # LangGraph pipeline definition
+│   ├── __init__.py
+│   ├── state.py                     # AgentState TypedDict — the shared whiteboard
+│   └── pipeline_graph.py            # StateGraph: nodes, edges, routing logic
 │
-├── 🧩 graph/
-│   ├── state.py                  # AgentState TypedDict (shared whiteboard)
-│   └── pipeline_graph.py         # LangGraph state machine
+├── agents/                          # All specialist agents live here
+│   ├── manager_agent.py             # 🧠 Supervisor — routes tasks to agents
+│   ├── dynamic_research_agent.py    # 🔍 Research Agent (ReAct + Tavily)
+│   ├── writer_agent.py              # ✍️  Writer Agent
+│   ├── coder_agent.py               # 💻 Coder Agent — generates & saves Python code
+│   ├── github_agent.py              # 🐙 GitHub Agent — file/branch operations
+│   ├── pdf_agent.py                 # 📄 PDF Agent — 100+ features
+│   ├── email_agent.py               # 📧 Email Agent — 80+ features
+│   ├── convo_agent.py               # 💬 Conversation Agent
+│   └── database_agent.py            # 🗄️  Database Agent — SQLite/PG/MySQL
 │
-├── 🌐 api/
-│   ├── pdf_endpoint.py           # PDF Agent API (Flask + FastAPI)
-│   └── email_endpoint.py         # Email Agent API (Flask + FastAPI)
+├── tools/                           # Reusable utility functions used by agents
+│   ├── web_search.py                # Tavily API wrapper → search_web()
+│   ├── github_tools.py              # PyGithub wrappers → create/read/update/delete
+│   ├── file_saver.py                # Local file save → save_report(), list_reports()
+│   └── dynamic_file_saver.py        # Dynamic output saver with auto-naming
 │
-├── 🎨 frontend/
-│   ├── PDFAgent.jsx              # PDF Agent React UI (100+ feature UI)
-│   └── EmailAgent.jsx            # Email Agent React UI (38 feature UI)
+├── api/                             # FastAPI HTTP endpoints
+│   ├── email_endpoint.py            # POST /email — Email Agent over HTTP
+│   └── pdf_endpoint.py              # POST /pdf — PDF Agent over HTTP
 │
-├── 📁 outputs/                   # Agent output files (auto-created)
-├── 📁 uploads/                   # PDF uploads directory
-├── 📁 git_agent_output/          # Coder agent output files
-├── 📁 memory/                    # Agent memory storage
-├── 📁 tests/                     # Test suite
-├── 📁 notebooks/                 # Jupyter experiments
+├── frontend/                        # React UI components
+│   ├── EmailAgent.jsx               # Email Agent chat interface
+│   └── PDFAgent.jsx                 # PDF Agent upload + result interface
 │
-├── 📄 PDF_AGENT_DOCUMENTATION.md # PDF Agent full docs
-├── 📄 EMAIL_AGENT_DOCUMENTATION.md # Email Agent full docs
-├── 📄 requirements.txt           # Python dependencies
-├── 📄 requirements_new_deps.txt  # New deps for PDF/Email agents
-├── 📄 .env.example               # API key template
-└── 🚀 main.py                    # CLI entry point
+├── tests/                           # Test suite
+│   ├── test_suite.py                # Main tests — all agents (pytest + unittest)
+│   └── test_database_agent.py       # Database Agent specific tests
+│
+├── outputs/                         # ← Auto-created. All local outputs land here.
+│   ├── code_*.py                    # Generated Python code files
+│   ├── report_*.md                  # Generated research reports
+│   ├── email_output.html            # HTML email outputs
+│   ├── pdf_agent_output.pdf         # PDF agent outputs
+│   └── ...
+│
+└── git_agent_output/                # ← Files saved to GitHub by Coder/GitHub agents
+    ├── code_*.py
+    └── report_*.md
+```
+
+> 📌 `outputs/` is local only (gitignored). `git_agent_output/` is committed to the repo by the agents themselves.
+
+---
+
+## 🔄 How the Workflow Works
+
+Here's how the system handles different types of tasks, step by step.
+
+### Example 1 — Research + Report
+
+**Task:** `"Research the latest trends in quantum computing"`
+
+```
+1. main.py         Builds initial AgentState with task set, all results empty
+2. Supervisor      Reads task → no results yet → routes to: research
+3. Research Agent  Searches Tavily (3-4 queries) → fills research_notes
+4. Supervisor      Reads state → research_notes filled, final_report empty → routes to: writer
+5. Writer Agent    Reads research_notes → generates polished report → fills final_report
+                   Also saves: outputs/report_research_the_latest_trends_in_quantum.md
+6. Supervisor      Reads state → final_report filled, no code/github task → FINISH
+7. main.py         Prints report preview
 ```
 
 ---
 
-## 🚀 Quick Start
+### Example 2 — Direct Coding Task
 
-### Prerequisites
-- Python **3.10+**
-- [Groq API key](https://console.groq.com) (free tier available)
-- [Tavily API key](https://tavily.com) (for web research)
-- GitHub Personal Access Token (for GitHub agent)
+**Task:** `"wrtie a bianry serach algortihm"` *(typos intentional)*
 
-### 1. Clone & Install
-
-```bash
-git clone https://github.com/prasadmanas8b-debug/ai-agent-project.git
-cd ai-agent-project
-
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
-pip install pymupdf pypdf reportlab pillow pytesseract   # PDF Agent extras
+```
+1. main.py         Builds initial AgentState
+2. Supervisor      LLM reads task → understands "binary search" → routes to: coder
+                   (No research step needed — it's a direct coding task)
+3. Coder Agent     LLM silently corrects typos → generates binary_search.py
+                   Saves to: outputs/code_wrtie_a_bianry_serach_algortihm.py (local)
+                   Pushes to: git_agent_output/code_wrtie_a_bianry_serach_algortihm.py (GitHub)
+4. Supervisor      code_result filled, no github push requested → FINISH
+5. main.py         Prints: "✅ Code generated (X lines) | Local: ... | GitHub: ..."
 ```
 
-### 2. Configure Environment
+---
+
+### Example 3 — Research → Code → GitHub
+
+**Task:** `"Research merge sort, implement it, and save to GitHub"`
+
+```
+1. Supervisor      → research
+2. Research Agent  → fills research_notes
+3. Supervisor      → writer (research done, report needed first)
+4. Writer Agent    → fills final_report
+5. Supervisor      → coder (report done + task mentions "implement")
+6. Coder Agent     → fills code_result, saves .py locally + GitHub
+7. Supervisor      → FINISH (github push already done by Coder Agent)
+```
+
+---
+
+### Example 4 — PDF Task
+
+**Task:** `"Summarize the PDF at uploads/report.pdf"`
+
+```
+1. Supervisor      Sees "pdf" in task → routes directly to: pdf
+2. PDF Agent       Loads file → extracts text → LLM summarizes → fills pdf_result
+3. Supervisor      pdf_result filled → FINISH
+4. main.py         Prints summary (skips large base64 fields)
+```
+
+---
+
+### Example 5 — Chat / General Question
+
+**Task:** `"What can this system do?"` or `"hi"`
+
+```
+1. Supervisor      No specific agent keyword → routes to: convo
+2. Convo Agent     Knows the full system capabilities → gives a helpful reply
+                   Maintains conversation_history for multi-turn context
+3. Supervisor      convo_result filled → FINISH
+4. main.py         Prints the reply
+```
+
+---
+
+## 🤖 Agents
+
+### 🧠 Supervisor — `agents/manager_agent.py`
+The central router. Uses `llama-3.3-70b` (temperature=0) to read the task and current state, then return the name of the next agent to run. Handles typos and vague phrasing through LLM understanding, with a fuzzy fallback map for edge cases.
+
+**Input:** Full `AgentState` (task text + boolean flags for each result field)  
+**Output:** Sets `state["next"]` to one of: `research | writer | coder | github | pdf | email | convo | database | FINISH`
+
+---
+
+### 🔍 Research Agent — `agents/dynamic_research_agent.py`
+A ReAct agent that searches the web via Tavily (up to 8 iterations, 6 results per search). Produces a structured markdown report. If Tavily is unavailable, falls back to LLM training knowledge and clearly labels the output.
+
+**Output:** Sets `state["research_notes"]`  
+**Saved to:** (in-memory only — passed to Writer Agent)
+
+---
+
+### ✍️ Writer Agent — `agents/writer_agent.py`
+Transforms research notes into a polished document. Detects the desired output type from the task (report, blog, summary, explainer) and adapts structure and tone accordingly.
+
+**Output:** Sets `state["final_report"]`  
+**Saved to:** `outputs/report_<slug>.md`
+
+---
+
+### 💻 Coder Agent — `agents/coder_agent.py`
+Generates clean, production-quality Python code. Silently corrects typos. Handles algorithms, automation scripts, API clients, data tools, and more. Saves to two places.
+
+**Output:** Sets `state["code_result"]`  
+**Saved to:**
+- `outputs/code_<slug>.py` (local)
+- `git_agent_output/code_<slug>.py` (GitHub)
+
+---
+
+### 🐙 GitHub Agent — `agents/github_agent.py`
+Translates natural language into GitHub API calls. Handles listing, reading, creating, updating, and deleting files, as well as branch management. All writes are locked to `git_agent_output/`.
+
+**Output:** Sets `state["github_result"]`  
+**Actions:** `list_files`, `read_file`, `create_or_update_file`, `create_branch`, `delete_file`
+
+---
+
+### 📄 PDF Agent — `agents/pdf_agent.py`
+100+ features across 20 categories — summarize, OCR, compress, convert, merge, split, extract tables, create PDFs from scratch, redact text, add watermarks, and more. Powered by PyMuPDF, pypdf, reportlab, and Groq.
+
+**Output:** Sets `state["pdf_result"]` (JSON string)  
+**Saved to:** `outputs/pdf_agent_output.pdf`, `outputs/images/`, `outputs/output.md`, etc.
+
+---
+
+### 📧 Email Agent — `agents/email_agent.py`
+80+ features across 18 categories — compose, send (SMTP), read (IMAP), reply, forward, analyze, detect phishing, generate templates, drip campaigns, A/B test subject lines, and more. Works in mock mode when SMTP credentials aren't set.
+
+**Output:** Sets `state["email_result"]` (JSON string)  
+**Saved to:** `outputs/email_output.html`
+
+---
+
+### 💬 Convo Agent — `agents/convo_agent.py`
+The friendly front-end. Handles greetings, questions about the system, and clarifications. Maintains multi-turn conversation history and knows the full capability set of the system so it can guide users.
+
+**Output:** Sets `state["convo_result"]` and `state["conversation_history"]`
+
+---
+
+### 🗄️ Database Agent — `agents/database_agent.py`
+42+ database operations — query, insert, update, delete, NL-to-SQL, health check, find duplicates, export (CSV/JSON/Excel), trend analysis, data quality reports. Supports SQLite (default), PostgreSQL, and MySQL.
+
+**Output:** Sets `state["db_result"]` (JSON string)  
+**Saved to:** `outputs/*.csv`, `outputs/*.xlsx`, etc.
+
+---
+
+## ⚙️ Environment Setup
+
+### 1. Clone & install
+
+```bash
+git clone https://github.com/prasadmanas8b-debug/ai-agent-project
+cd ai-agent-project
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Configure `.env`
 
 ```bash
 cp .env.example .env
+# Open .env and fill in your keys
 ```
 
-Edit `.env`:
-
-```env
-# ── Core (required) ──────────────────────
-GROQ_API_KEY=your_groq_api_key
-TAVILY_API_KEY=your_tavily_api_key
-GITHUB_TOKEN=your_github_personal_access_token
-
-# ── Email Agent (optional — AI features work without these) ──
-EMAIL_ADDRESS=you@gmail.com
-EMAIL_PASSWORD=xxxx xxxx xxxx xxxx     # Gmail App Password
-EMAIL_SMTP_HOST=smtp.gmail.com
-EMAIL_SMTP_PORT=587
-EMAIL_IMAP_HOST=imap.gmail.com
-```
+| Variable | Required | Where to get it |
+|---|---|---|
+| `GROQ_API_KEY` | ✅ | [console.groq.com](https://console.groq.com) — free |
+| `TAVILY_API_KEY` | ✅ | [tavily.com](https://tavily.com) — free tier |
+| `GITHUB_TOKEN` | ✅ | GitHub → Settings → Developer Settings → PAT (`repo` scope) |
+| `GITHUB_REPO` | ✅ | `username/repo-name` |
+| `EMAIL_ADDRESS` | Optional | Your Gmail address |
+| `EMAIL_PASSWORD` | Optional | Gmail App Password (not your real password) |
+| `DB_TYPE` | Optional | `sqlite` (default) / `postgresql` / `mysql` |
+| `DB_SQLITE_PATH` | Optional | Path to `.db` file, default `database.db` |
 
 ### 3. Run
 
@@ -463,234 +349,113 @@ EMAIL_IMAP_HOST=imap.gmail.com
 python main.py
 ```
 
-**Example prompts:**
-```
-Research the latest developments in transformer architectures
-Implement a LRU cache in Python
+---
+
+## 🚀 Quick Start — Example Tasks
+
+Once running, type any of these at the prompt:
+
+```bash
+# Research
+Research the latest developments in quantum computing
+
+# Coding (typos are fine!)
+wrtie a bianry serach algortihm in python
+
+# Research + Code
+Research neural networks and implement a simple one in Python
+
+# PDF
 Summarize PDF at uploads/report.pdf
-Compose a follow-up email to the investor about Q1
-Check this email for phishing [paste email]
-Create a professional project proposal PDF
+
+# Email
+Compose a professional follow-up email to an investor
+
+# GitHub
+List all files in the agents folder
+
+# Database
+List all tables in the database
+
+# Chat
+What can this system do?
 ```
 
 ---
 
-## 📡 API Reference
-
-### Start the API server
+## 🧪 Running Tests
 
 ```bash
-# Flask
-python -c "from flask import Flask; from api.pdf_endpoint import pdf_bp; from api.email_endpoint import email_bp; app=Flask(__name__); app.register_blueprint(pdf_bp); app.register_blueprint(email_bp); app.run(port=5000)"
+# Run all tests
+pytest tests/test_suite.py -v
 
-# FastAPI
-uvicorn main_api:app --reload --port 8000
+# Run database tests
+pytest tests/test_database_agent.py -v
+
+# Without pytest
+python tests/test_suite.py
 ```
 
-### PDF Agent API
+All tests use `unittest.mock` — **no API keys needed, no network calls, instant results**.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/pdf` | Run any PDF feature (JSON body) |
-| `POST` | `/api/pdf/upload` | Run with file upload (multipart) |
-| `GET` | `/api/pdf/modes` | List all 43 modes |
+---
+
+## 🔗 API Endpoints
+
+The `api/` folder exposes the PDF and Email agents over HTTP via FastAPI.
 
 ```bash
-# Summarize a PDF via URL
-curl -X POST http://localhost:5000/api/pdf \
-  -H "Content-Type: application/json" \
-  -d '{"task": "summarize this", "pdf_mode": "summarize", "pdf_b64": "<base64>"}'
-
-# Upload and compress
-curl -X POST http://localhost:5000/api/pdf/upload \
-  -F "task=compress this PDF" \
-  -F "pdf_mode=compress" \
-  -F "file=@large_document.pdf"
+# Start the API server
+uvicorn api.pdf_endpoint:app --reload --port 8001
+uvicorn api.email_endpoint:app --reload --port 8002
 ```
 
-### Email Agent API
+| Endpoint | Method | Description |
+|---|---|---|
+| `POST /pdf` | POST | Run any PDF Agent feature via HTTP |
+| `POST /email` | POST | Run any Email Agent feature via HTTP |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/email` | Run any email feature (JSON body) |
-| `POST` | `/api/email/send` | Send email directly |
-| `GET` | `/api/email/inbox` | Fetch inbox |
-| `POST` | `/api/email/upload` | With attachment |
-| `GET` | `/api/email/modes` | List all 38 modes |
+---
+
+## 🌐 Frontend
+
+The `frontend/` folder contains React components that provide a chat/upload UI for the PDF and Email agents.
 
 ```bash
-# Compose an email
-curl -X POST http://localhost:5000/api/email \
-  -H "Content-Type: application/json" \
-  -d '{
-    "task": "Write a follow-up to the investor",
-    "email_mode": "compose",
-    "email_context": {"to": "investor@vc.com", "tone": "formal"}
-  }'
-
-# Fetch inbox
-curl "http://localhost:5000/api/email/inbox?folder=INBOX&limit=10"
+# From the frontend/ directory
+npm install
+npm run dev
 ```
 
----
-
-## 🎨 Frontend
-
-Both agents come with full **React + Tailwind CSS** UIs.
-
-### PDF Agent UI Features
-- 📂 Drag-and-drop PDF upload (primary + secondary for compare/merge)
-- 🗂️ 14-category sidebar with live feature search
-- 📊 Smart result panels: image grids, CSV downloads, code blocks, HTML/Markdown previews
-- ⬇️ Direct download for output PDFs, images, CSVs, HTML, Markdown
-- 🕘 Session history with quick-replay
-
-### Email Agent UI Features
-- 🎭 Tone selector: formal / casual / friendly / assertive / empathetic / concise
-- 📧 Recipient fields (To, CC) with auto-send toggle
-- 📋 Original email paste box for reply/rewrite/analyze operations
-- 💬 Smart reply cards with one-click copy
-- 🛡️ Security verdict banners (safe / suspicious / dangerous)
-- 🌐 HTML email preview via sandboxed iframe
+- **PDFAgent.jsx** — drag-and-drop PDF upload + result viewer
+- **EmailAgent.jsx** — email composition and inbox viewer
 
 ---
 
-## 🔑 Environment Variables Reference
+## 🔒 Security Notes
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GROQ_API_KEY` | ✅ Yes | Groq LLM API key — get at [console.groq.com](https://console.groq.com) |
-| `TAVILY_API_KEY` | ✅ Yes | Web search API — get at [tavily.com](https://tavily.com) |
-| `GITHUB_TOKEN` | ✅ Yes | GitHub PAT with `repo` scope |
-| `EMAIL_ADDRESS` | ⚡ Optional | Your email address for SMTP/IMAP |
-| `EMAIL_PASSWORD` | ⚡ Optional | App password (not your main password) |
-| `EMAIL_SMTP_HOST` | ⚡ Optional | SMTP host (default: `smtp.gmail.com`) |
-| `EMAIL_SMTP_PORT` | ⚡ Optional | SMTP port (default: `587`) |
-| `EMAIL_IMAP_HOST` | ⚡ Optional | IMAP host (default: `imap.gmail.com`) |
-
-> **Note:** Email AI features (compose, analyze, rewrite, etc.) work without SMTP/IMAP. Only `read` and `send` require credentials.
+- **Never commit `.env`** — it's gitignored. Use `.env.example` as a template.
+- **GitHub Token** — use the minimum scope needed (`repo` only). Rotate it periodically.
+- **Email Password** — use a Gmail App Password, not your real password. Enable 2FA first.
+- **Database** — set `DB_READ_ONLY=true` in `.env` if the Database Agent should never write.
+- **GitHub writes** — all agent file writes are locked to `git_agent_output/` — they cannot modify source files.
 
 ---
 
-## 📦 Dependencies
+## 🛣️ How to Explain This to Your Team
 
-### Core
-| Package | Purpose |
-|---------|---------|
-| `langgraph` | State machine orchestration |
-| `langchain-groq` | Groq LLM integration |
-| `langchain` | Agent framework |
-| `python-dotenv` | Environment management |
-| `tavily-python` | Web search |
-| `PyGithub` | GitHub API |
+**The 30-second pitch:**
+> "It's a Python system where you type one sentence and an AI supervisor figures out which specialist agents to run — in sequence if needed. Need research? It searches the web. Need code? It generates and saves a `.py` file. Need a PDF summarized? Done. All agents share a single state object and the supervisor loops until the job is complete."
 
-### PDF Agent
-| Package | Purpose |
-|---------|---------|
-| `pymupdf` | PDF read, annotate, compress, watermark, images |
-| `pypdf` | Merge, split, encrypt, metadata |
-| `reportlab` | PDF creation from scratch |
-| `pillow` | Image processing |
-| `pytesseract` | OCR for scanned PDFs |
+**Key concepts to highlight:**
 
-### API / Frontend
-| Package | Purpose |
-|---------|---------|
-| `flask` / `fastapi` | API server |
-| `uvicorn` | ASGI server for FastAPI |
-| React + Tailwind | Frontend UI |
-
----
-
-## 🧪 Testing
-
-```bash
-# Run test suite
-python -m pytest tests/ -v
-
-# Run a specific agent test
-python -m pytest tests/test_suite.py -k "pdf" -v
-
-# Quick smoke test
-python main.py
-# > Research quantum computing
-```
-
----
-
-## 🛣️ Roadmap
-
-| Status | Feature |
-|--------|---------|
-| ✅ Done | Research + Writer + Coder agents |
-| ✅ Done | GitHub agent (read/write/branch) |
-| ✅ Done | Conversational agent with history |
-| ✅ Done | **PDF Agent — 43 features** |
-| ✅ Done | **Email Agent — 38 features** |
-| ✅ Done | LangGraph state machine (7 agents) |
-| ✅ Done | Flask + FastAPI dual API support |
-| ✅ Done | React frontend for PDF + Email agents |
-| 🔜 Next | Streamlit UI overhaul |
-| 🔜 Next | Persistent vector memory (ChromaDB) |
-| 🔜 Next | Docker + docker-compose support |
-| 🔜 Next | GitHub Actions CI/CD pipeline |
-| 🔜 Next | Calendar Agent (Google Calendar / Outlook) |
-| 🔜 Next | Slack Agent (send messages, read channels) |
-| 🔜 Next | Browser Agent (web automation) |
-| 🔜 Next | Voice input/output |
-
----
-
-## 📁 Output Files
-
-The system auto-saves agent outputs to the `outputs/` directory:
-
-| Output | Location |
-|--------|----------|
-| PDF files (watermark, compress, merge, etc.) | `outputs/pdf_agent_output.pdf` |
-| Split PDF parts | `outputs/split_part_N_pages_X-Y.pdf` |
-| Extracted images | `outputs/images/page_N.png` |
-| CSV tables | `outputs/table_N_Title.csv` |
-| Markdown export | `outputs/output.md` |
-| HTML export | `outputs/output.html` |
-| Email HTML | `outputs/email_output.html` |
-| Email Python code | `outputs/email_code.py` |
-| Coder agent output | `git_agent_output/` |
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how to add a new agent:
-
-1. Create `agents/your_agent.py` with a `run_your_agent(state: AgentState) -> AgentState` function
-2. Add `your_result: str` to `AgentState` in `graph/state.py`
-3. Register the node in `graph/pipeline_graph.py`
-4. Add routing rules to `agents/manager_agent.py`
-5. Update `initial_state` in `main.py`
-6. Add API endpoint in `api/`
-7. Add React UI in `frontend/`
-
-```bash
-# Fork → branch → PR
-git checkout -b feat/your-agent
-git commit -m "feat(agent): add YourAgent with N features"
-git push origin feat/your-agent
-```
-
----
-
-## 👥 Contributors
-
-<a href="https://github.com/prasadmanas8b-debug/ai-agent-project/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=prasadmanas8b-debug/ai-agent-project" />
-</a>
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+| Concept | What it means |
+|---|---|
+| `AgentState` | A shared Python `dict` that all agents read from and write to |
+| `Supervisor` | An LLM that reads the state and decides what runs next |
+| `LangGraph` | The framework that wires agents into a controllable loop |
+| `outputs/` | Everything the agents produce ends up here (code, reports, PDFs) |
+| Typo tolerance | The Supervisor uses an LLM — it understands intent, not exact keywords |
 
 ---
 
@@ -698,10 +463,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%"/>
 
-**Built with ❤️ by [Kunal Roy](https://github.com/prasadmanas8b-debug)**
+<br/>
 
-⭐ Star this repo if you find it useful · 🐛 [Report a bug](https://github.com/prasadmanas8b-debug/ai-agent-project/issues) · 💡 [Request a feature](https://github.com/prasadmanas8b-debug/ai-agent-project/issues)
-
-*7 agents · 43 PDF features · 38 email features · production-ready*
+Built with ❤️ using **LangGraph · Groq · Tavily · PyGithub · FastAPI**
 
 </div>
