@@ -1,18 +1,20 @@
 """
-agents/writer_agent.py — Writer Agent.
+agents/writer_agent.py — Writer Agent
 
-Takes raw research notes and the original task, then produces a polished,
-well-structured markdown report via Groq (llama-3.3-70b).
+A senior technical writer. Turns raw research into polished documents.
+Detects output type from the task (report, blog, summary, explainer).
+Saves the output locally to outputs/report_<slug>.md automatically.
 """
 
 import os
+import re
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
 load_dotenv()
 
-_llm: ChatGroq | None = None  # lazy init
+_llm: ChatGroq | None = None
 
 
 def _get_llm() -> ChatGroq:
@@ -28,49 +30,75 @@ def _get_llm() -> ChatGroq:
 
 
 _SYSTEM_PROMPT = """
-You are a professional technical writer.
+You are a senior technical writer and editor.
 
-Given research notes and a user task, write a polished, well-structured markdown
-report. Follow this structure exactly:
+STEP 1 — Detect output type from the task:
+  "blog" / "article" / "post"          → engaging blog post
+  "summary" / "summarize" / "tldr"     → concise executive summary (< 250 words)
+  "explain" / "how does" / "what is"   → clear, beginner-friendly explainer
+  default                               → formal research report
 
-# [Descriptive Title]
+STEP 2 — Write the document using this structure (for formal report):
+
+# [Clear, Descriptive Title]
 
 ## Executive Summary
-2-3 sentence overview of the most important points.
+2-3 sentences. The most important points, right up front.
 
 ## Key Findings
-- Concise bullet points (5-10 items).
+- 5-10 specific, factual bullet points from the research.
 
 ## Analysis
-Detailed explanation organized into logical sub-sections.
+Detailed explanation in logical sub-sections. Use headers. Be specific.
+
+## Implications
+What this means — who should care and why.
 
 ## Conclusion
-Actionable takeaways in 2-3 sentences.
+2-3 clear, actionable takeaways.
 
-Rules:
-- Use clear, plain language — no jargon without explanation.
-- Do NOT include opinions or speculation beyond the research notes.
-- Format numbers, dates, and technical terms consistently.
-- Aim for 400-800 words total.
+QUALITY RULES:
+  - Be specific: use numbers, names, dates when available
+  - No filler ("It is worth noting…", "In today's world…")
+  - Explain all jargon on first use
+  - Do NOT speculate beyond the research notes provided
+  - Target 500-900 words for reports; 150-250 for summaries
 """
+
+
+def _make_slug(task: str) -> str:
+    slug = re.sub(r"[^\w\s]", "", task.lower())
+    slug = re.sub(r"\s+", "_", slug.strip())[:50].strip("_")
+    return slug or "report"
+
+
+def _save_locally(slug: str, content: str) -> str:
+    os.makedirs("outputs", exist_ok=True)
+    path = os.path.join("outputs", f"report_{slug}.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    return path
 
 
 def run_writer_agent(research_notes: str, task: str) -> str:
     """
-    Turn research notes into a polished markdown report.
+    Convert research notes into a polished markdown document.
+
+    Saves the result to outputs/report_<slug>.md.
 
     Args:
         research_notes: Raw text from the Research Agent.
-        task:           Original user task (used for context / title).
+        task:           Original user task (determines output style).
 
     Returns:
-        Markdown-formatted report string, or an error message.
+        Markdown-formatted document string.
     """
     print(f"\n✍️  Writer Agent — task: {task[:100]}")
 
     user_msg = (
-        f"Task / Topic: {task}\n\n"
-        f"Research Notes:\n{research_notes[:6000]}"
+        f"USER TASK: {task}\n\n"
+        f"RESEARCH NOTES:\n{research_notes[:6000]}\n\n"
+        f"Write the document now."
     )
 
     try:
@@ -79,9 +107,15 @@ def run_writer_agent(research_notes: str, task: str) -> str:
             HumanMessage(content=user_msg),
         ])
         report = response.content.strip()
-        print(f"✍️  Writer Agent — done ({len(report)} chars)")
-        return report
     except Exception as exc:
         msg = f"[Writer Agent ERROR] {exc}"
         print(msg)
         return msg
+
+    if not report:
+        report = f"# {task}\n\n{research_notes[:2000]}"
+
+    slug       = _make_slug(task)
+    local_path = _save_locally(slug, report)
+    print(f"✍️  Writer Agent — saved: {local_path} ({len(report)} chars)")
+    return report
