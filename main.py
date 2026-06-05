@@ -1,108 +1,74 @@
 """
-main.py — Phase 3 Pipeline Runner
-AI Agent Project | Root folder
-
-Phase 3 upgrade: The hardcoded pipeline from Phase 2 is replaced with
-a LangGraph-powered graph. One line to run everything.
-
-Phase 2 (hardcoded):
-    research_notes = run_research_agent(topic)
-    final_report   = run_writer_agent(research_notes, topic)
-
-Phase 3 (graph-driven):
-    result = graph.invoke({"task": user_input, ...})
-
-The graph handles:
-  - Which agents to run (and in what order)
-  - Passing data between agents via shared state
-  - Deciding when the task is done (FINISH)
-  - Routing different task types to different agents
-
-How to run:
-    python main.py
-
-Supported task types:
-  "Research the history of AI"                        → Research + Write
-  "List files in the agents folder"                   → GitHub only
-  "Research quantum computing and save to GitHub"     → Research + Write + GitHub
-  "Create a branch called feature/phase-4"            → GitHub only
+main.py — Entry point for the AI Agent System.
+Supports: research, writer, github, coder, email agents.
 """
 
-import sys
-import os
+from graph.pipeline_graph import build_graph, initial_state
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, PROJECT_ROOT)
 
-from dotenv import load_dotenv
-load_dotenv()
-
-from graph.pipeline_graph import build_graph
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ENTRY POINT
-# ─────────────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-
-    print("\n╔════════════════════════════════════════════════════╗")
-    print("║   AI Agent Pipeline — Phase 3                      ║")
-    print("║   Powered by LangGraph + Groq + Tavily             ║")
-    print("╠════════════════════════════════════════════════════╣")
-    print("║  Examples:                                         ║")
-    print("║  • Research the history of the internet            ║")
-    print("║  • List files in the agents folder                 ║")
-    print("║  • Research AI in healthcare and save to GitHub    ║")
-    print("║  • Create a branch called feature/phase-4          ║")
-    print("╚════════════════════════════════════════════════════╝\n")
-
-    user_input = input("What do you want to do? ").strip()
-
-    if not user_input:
-        print("No input entered. Exiting.")
-        sys.exit(0)
-
-    # ── Build the graph ───────────────────────────────────────────────────
+def main():
     graph = build_graph()
 
-    # ── Initial state — all agent fields start empty ──────────────────────
-    # The Supervisor reads the task and fills "next" to kick things off.
-    initial_state = {
-        "task":           user_input,
-        "research_notes": "",
-        "final_report":   "",
-        "github_result":  "",
-        "next":           "",
-    }
+    print("\n" + "=" * 60)
+    print("  🤖 AI Agent System  |  5 Agents Ready")
+    print("=" * 60)
+    print("Examples:")
+    print("  Research → 'Research quantum computing trends'")
+    print("  Writer   → 'Write a blog post about LangGraph'")
+    print("  GitHub   → 'List files in agents folder'")
+    print("  Coder    → 'Write a Python function to reverse a string'")
+    print("  Coder    → 'Debug this code: def add(a,b) return a+b'")
+    print("  Email    → 'Draft an email asking my manager for a day off'")
+    print("  Email    → 'Send email to john@example.com about project update'")
+    print("=" * 60 + "\n")
 
-    print(f"\n{'='*55}")
-    print(f"  PIPELINE STARTED")
-    print(f"  Task: {user_input}")
-    print(f"{'='*55}\n")
+    user_input = input("What do you want to do? ").strip()
+    if not user_input:
+        print("No input. Exiting.")
+        return
 
-    # ── Run the graph ─────────────────────────────────────────────────────
-    # graph.invoke() runs the full pipeline — Supervisor decides everything
-    try:
-        result = graph.invoke(initial_state)
-    except Exception as e:
-        print(f"\n❌ Pipeline error: {e}")
-        sys.exit(1)
+    state = initial_state(user_input)
 
-    # ── Display results ───────────────────────────────────────────────────
-    print(f"\n{'='*55}")
-    print("  PIPELINE COMPLETE — RESULTS")
-    print(f"{'='*55}\n")
+    print("\n[System] Starting graph...\n")
+    result = graph.invoke(state)
 
-    if result.get("research_notes"):
-        print(f"📚 Research:   ✅ Collected ({len(result['research_notes'])} chars)")
+    print("\n" + "=" * 60)
+    print("  DONE")
+    print("=" * 60)
+
+    # Print whichever output was populated
+    if result.get("code_result"):
+        print("\n🖥️  CODER AGENT OUTPUT:")
+        print(result["code_result"][:1200])
+        if result.get("code_output"):
+            print(f"\n📄 Full code saved to: outputs/generated_code.py")
+            _save_output(result["code_output"], "outputs/generated_code.py")
+
+    if result.get("email_result"):
+        print("\n📧 EMAIL AGENT OUTPUT:")
+        print(result["email_result"][:1200])
+        if result.get("email_draft"):
+            _save_output(result["email_draft"], "outputs/email_draft.txt")
+            print(f"\n📄 Draft saved to: outputs/email_draft.txt")
 
     if result.get("final_report"):
-        print(f"📝 Report:     ✅ Written ({len(result['final_report'])} chars)")
-        print(f"\n--- REPORT PREVIEW (first 800 chars) ---\n")
+        print("\n✍️  WRITER OUTPUT:")
         print(result["final_report"][:800])
-        print("\n[Full report saved in outputs/ folder]")
+
+    if result.get("research_notes"):
+        print("\n🔍 RESEARCH OUTPUT:")
+        print(result["research_notes"][:800])
 
     if result.get("github_result"):
-        print(f"\n🐙 GitHub:     {result['github_result']}")
+        print(f"\n✅ GITHUB: {result['github_result']}")
 
-    if not any([result.get("research_notes"), result.get("final_report"), result.get("github_result")]):
-        print("⚠️  No output was generated. Check the logs above for errors.")
+
+def _save_output(content: str, path: str):
+    import os
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+if __name__ == "__main__":
+    main()
