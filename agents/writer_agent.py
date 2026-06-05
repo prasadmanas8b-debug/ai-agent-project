@@ -44,7 +44,7 @@ load_dotenv()
 
 # LangChain imports for the LLM
 from langchain_groq import ChatGroq
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 
 # Member 3's file saver tool
 from tools.file_saver import save_to_file
@@ -190,3 +190,4 @@ if __name__ == "__main__":
     print("\n--- REPORT PREVIEW ---")
     print(result[:500])
     print("\n✅ writer_agent.py is working!")
+
