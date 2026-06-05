@@ -46,7 +46,8 @@ class AgentState(TypedDict):
 # ── Import Agents (lazy to allow partial installs) ────────────────────────────
 def _load_agents():
     from agents.manager_agent  import manager_agent
-    from agents.research_agent import research_agent
+    # ✅ Correct
+    from agents.research_agent import run_research_agent as research_agent
     from agents.writer_agent   import writer_agent
     from agents.github_agent   import github_agent
     from agents.coder_agent    import coder_agent
