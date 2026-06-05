@@ -1,8 +1,8 @@
-# 🔍 AI Research Pipeline — Phase 1 & 2
+# 🤖 AI Agent Pipeline — Phase 1, 2 & 3
 
-> **Team of 3 CSE Students | Groq (LLaMA3) + Tavily Search + LangChain**
+> **Team of 3 CSE Students | Groq LLaMA3 + Tavily Search + LangChain + LangGraph**
 
-A two-agent sequential pipeline that takes any research topic, searches the web, then rewrites the raw findings into a clean professional report — all automatically.
+A multi-agent pipeline that takes any natural language command, routes it to the right agents automatically, and produces research reports — saving them locally and optionally to GitHub.
 
 ---
 
@@ -10,56 +10,56 @@ A two-agent sequential pipeline that takes any research topic, searches the web,
 
 - [How It Works](#-how-it-works)
 - [Project Structure](#-project-structure)
-- [Team Roles & Ownership](#-team-roles--ownership)
+- [Team Roles](#-team-roles--ownership)
 - [Getting Started](#-getting-started)
 - [API Keys Setup](#-api-keys-setup)
 - [Running the Pipeline](#-running-the-pipeline)
 - [Output Files](#-output-files)
+- [LangGraph — The Core Concept](#-langgraph--the-core-concept)
+- [Agent Comparison Table](#-agent-comparison-table)
 - [Git Workflow](#-git-workflow-no-conflicts-guide)
 - [Merging Without Conflicts](#-merging-without-conflicts)
-- [Weekly Schedule](#-phase-2-weekly-schedule)
+- [Weekly Schedule](#-phase-3-weekly-schedule)
 - [Lessons Learned](#-lessons-learned)
 - [Troubleshooting](#-troubleshooting)
 - [Git Cheat Sheet](#-git-cheat-sheet)
-- [What's Next — Phase 3](#-whats-next--phase-3)
+- [What's Next — Phase 4](#-whats-next--phase-4)
 
 ---
 
 ## ⚙️ How It Works
 
-### Phase 1 — Single Agent
-
+### Phase 1 — Single Research Agent
 ```
-You type a topic
-       ↓
-Research Agent (Groq + Tavily)
-  → searches web 2-3 times (ReAct loop)
-  → writes raw notes
-  → saves outputs/report_{topic}.md ✅
+You type a topic → Research Agent searches web → saves raw notes
 ```
 
 ### Phase 2 — Sequential Pipeline
-
 ```
-You type a topic
-       ↓
-[ Stage 1 ] Research Agent
-  → searches web, collects raw notes
-  → saves outputs/report_{topic}.md
-       ↓
-  (raw notes passed as input)
-       ↓
-[ Stage 2 ] Writer Agent
-  → reads raw notes
-  → rewrites into clean structured report (4 sections)
-  → saves outputs/final_report_{topic}.md ✅
+Research Agent → Writer Agent → saves polished report
 ```
 
-**Two output files per run:**
-| File | What it contains | Who creates it |
-|------|-----------------|----------------|
-| `outputs/report_{topic}.md` | Raw research notes from web search | Research Agent |
-| `outputs/final_report_{topic}.md` | Polished 4-section markdown report | Writer Agent |
+### Phase 3 — LangGraph Orchestrated System (current)
+```
+You type ANYTHING in natural language
+         ↓
+[ Supervisor ] ← decides everything
+    ↓       ↓       ↓
+Research  Writer  GitHub
+    ↓       ↓       ↓
+    └───────→ END ←──┘
+
+The Supervisor runs after EVERY agent to decide the next step.
+```
+
+**Examples of what you can type:**
+| Input | What runs |
+|-------|-----------|
+| `Research the history of AI` | Research → Writer → FINISH |
+| `List files in the agents folder` | GitHub → FINISH |
+| `Research quantum computing and save to GitHub` | Research → Writer → GitHub → FINISH |
+| `Create a branch called feature/phase-4` | GitHub → FINISH |
+| `Do something useful` | Defaults to Research → Writer → FINISH |
 
 ---
 
@@ -69,21 +69,27 @@ You type a topic
 ai-agent-project/
 │
 ├── agents/
-│   ├── research_agent.py     ✅ Phase 1 — main brain, searches the web
-│   ├── writer_agent.py       ✅ Phase 2 — rewrites notes into a clean report
-│   └── manager_agent.py      🔒 Phase 3 — leave empty for now
+│   ├── research_agent.py     ✅ Phase 1 — searches web, collects raw notes
+│   ├── writer_agent.py       ✅ Phase 2 — rewrites notes into polished report
+│   ├── manager_agent.py      ✅ Phase 3 — Supervisor, decides routing
+│   └── github_agent.py       ✅ Phase 3 — performs GitHub repo actions
 │
 ├── tools/
-│   ├── web_search.py         ✅ Phase 1 — Tavily web search (Member 2)
-│   └── file_saver.py         ✅ Phase 2 updated — saves with custom filenames
+│   ├── web_search.py         ✅ Phase 1 — Tavily web search wrapper
+│   ├── file_saver.py         ✅ Phase 2 — saves files with custom names
+│   └── github_tools.py       ✅ Phase 3 — PyGithub API functions
 │
-├── outputs/                  ← auto-generated reports saved here (gitignored)
+├── graph/
+│   ├── state.py              ✅ Phase 3 — shared AgentState TypedDict
+│   └── pipeline_graph.py     ✅ Phase 3 — LangGraph graph definition
+│
+├── outputs/                  ← auto-generated reports (gitignored)
 ├── notebooks/                ← experiments & testing
 │
-├── main.py                   ✅ Phase 2 — pipeline runner (connects both agents)
+├── main.py                   ✅ Phase 3 — single entry point, graph-driven
 ├── .env                      ← your real API keys (NEVER commit this)
 ├── .env.example              ← safe template to share with teammates
-├── .gitignore                ← blocks .env and outputs/ from GitHub
+├── .gitignore                ← blocks .env, outputs/, pycache from GitHub
 └── requirements.txt          ← all dependencies
 ```
 
@@ -91,11 +97,11 @@ ai-agent-project/
 
 ## 👥 Team Roles & Ownership
 
-| Member | Role | File | API Key |
-|--------|------|------|---------|
-| **Member 1 (Leader)** | Research Agent + Writer Agent + Pipeline | `agents/research_agent.py`, `agents/writer_agent.py`, `main.py` | `GROQ_API_KEY` |
+| Member | Role | Files | API Key |
+|--------|------|-------|---------|
+| **Member 1 (Leader)** | All agents + graph + pipeline | `agents/`, `graph/`, `main.py` | `GROQ_API_KEY` |
 | **Member 2** | Web Search Tool | `tools/web_search.py` | `TAVILY_API_KEY` |
-| **Member 3** | Output & File Saver | `tools/file_saver.py` | None |
+| **Member 3** | File Saver + GitHub Tools | `tools/file_saver.py`, `tools/github_tools.py` | `GITHUB_TOKEN` |
 
 > ⚠️ **Golden Rule:** Each member owns their file. **Never edit someone else's file without telling them first.**
 
@@ -103,29 +109,10 @@ ai-agent-project/
 
 ## 🚀 Getting Started
 
-### Step 1 — Clone & Open in Codespaces
-
 ```bash
 git clone https://github.com/prasadmanas8b-debug/ai-agent-project.git
 cd ai-agent-project
-```
-
-### Step 2 — Install Dependencies
-
-All 3 members run this once:
-
-```bash
 pip install -r requirements.txt
-```
-
-If it completes with no red errors → environment is ready ✔
-
-### Step 3 — Set Up Your Branch
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b feature/your-branch-name
 ```
 
 ---
@@ -134,13 +121,13 @@ git checkout -b feature/your-branch-name
 
 > ⚠️ The `.env` file contains your real keys. **NEVER push it to GitHub.** It is blocked by `.gitignore`.
 
-### Where to Get Your Keys
+### Keys You Need
 
 | Key | Where to Get It | Free? | Who Needs It |
 |-----|----------------|-------|--------------|
-| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) → Sign up → API Keys | ✅ 100% free | Member 1 |
-| `TAVILY_API_KEY` | [tavily.com](https://tavily.com) → Sign up → API Keys | ✅ Free tier | Member 2 |
-| `GITHUB_TOKEN` | GitHub → Settings → Developer Settings → Tokens | ✅ Free | All 3 (optional) |
+| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) → API Keys | ✅ 100% free | Member 1 |
+| `TAVILY_API_KEY` | [tavily.com](https://tavily.com) → API Keys | ✅ Free tier | Member 2 |
+| `GITHUB_TOKEN` | GitHub → Settings → Developer Settings → Personal Access Tokens (classic) → give **repo** scope | ✅ Free | Member 3 |
 
 ### Create Your `.env` File
 
@@ -148,52 +135,52 @@ git checkout -b feature/your-branch-name
 GROQ_API_KEY=gsk_...your_groq_key_here
 TAVILY_API_KEY=tvly-...your_tavily_key_here
 GITHUB_TOKEN=ghp_...your_github_token_here
+GITHUB_REPO=prasadmanas8b-debug/ai-agent-project
 ```
 
 ---
 
 ## ▶️ Running the Pipeline
 
-### Full Pipeline (Phase 2 — recommended)
+### Full Graph Pipeline (Phase 3 — recommended)
 
 ```bash
 python main.py
-# → Enter your topic when prompted
-# → Two files are created in outputs/
+# → Type anything in natural language
+# → Graph decides which agents to run
 ```
 
-### Research Agent only (Phase 1)
+### Standalone Agent Tests
 
 ```bash
-python agents/research_agent.py
+python agents/github_agent.py     # test GitHub agent independently
+python tools/github_tools.py      # test raw GitHub API connection
+python graph/pipeline_graph.py    # test graph builds without errors
 ```
 
-### Writer Agent only (standalone test)
+### Phase 2 style (research + write only)
 
 ```bash
-python agents/writer_agent.py
-```
-
-### Streamlit Web UI
-
-```bash
-streamlit run agents/research_agent.py
+python agents/research_agent.py   # terminal mode
+streamlit run agents/research_agent.py  # web UI
 ```
 
 ---
 
 ## 📄 Output Files
 
-After running `python main.py` with topic `"artificial intelligence"`:
+After running `python main.py` with `"Research artificial intelligence in healthcare and save to GitHub"`:
 
 ```
 outputs/
-├── report_artificial_intelligence.md        ← raw research notes
-└── final_report_artificial_intelligence.md  ← polished 4-section report
+├── report_artificial_intelligence_in_healthcare.md        ← raw research notes
+└── final_report_artificial_intelligence_in_healthcare.md  ← polished 4-section report
+
+GitHub repo:
+└── docs/artificial_intelligence_in_healthcare.md  ← saved by GitHub Agent
 ```
 
-The final report always has these four sections:
-
+The final report always has four sections:
 ```markdown
 ## Overview
 ## Key Findings
@@ -203,50 +190,84 @@ The final report always has these four sections:
 
 ---
 
-## 🧠 What Makes the Writer Agent Different?
+## 🧠 LangGraph — The Core Concept
 
-Both agents use the same Groq LLM. What makes them behave completely differently is two things: **system prompt** and **tools**.
+### Why Not Just More Python Functions?
 
-| | Research Agent | Writer Agent |
-|--|---------------|--------------|
-| **System Prompt** | "Search the web, collect information" | "Take notes, write a structured report" |
-| **Tools Available** | `web_search`, `file_saver` | `file_saver` only |
-| **Input** | A topic string | Raw research notes (string) |
-| **Output** | Raw research text + dict | Polished markdown report |
-| **Browses web?** | ✅ Yes | ❌ Never |
-| **LLM Model** | `llama-3.1-8b-instant` | `llama-3.3-70b-versatile` |
+Phase 2 was hardcoded: Research always ran first, Writer always second. Fine for two agents. But with three agents and different task types, you can't hardcode all the flows:
 
-> **Key insight:** Specialization = a different system prompt + different tools. That's it. No magic.
+- Research-only task → just Research + Writer
+- GitHub-only task → just GitHub Agent
+- Research + save to GitHub → Research + Writer + GitHub
 
-> ⚠️ **Never give the Writer Agent web search access.** It will go off-script and add information that was never actually researched.
+LangGraph solves this by making the flow **dynamic** — the Supervisor decides at runtime.
+
+### The Graph
+
+```
+START → Supervisor → [conditional edge based on state["next"]]
+           ↓               ↓               ↓               ↓
+       research_node   writer_node   github_node          END
+           ↓               ↓               ↓
+           └───────────────┴───────────────┘
+                           ↓
+                       Supervisor (again)
+```
+
+After EVERY agent runs, control returns to the Supervisor. The Supervisor then re-reads the state and decides the next step. This loop is what makes the system truly agentic.
+
+### Shared State — The Whiteboard
+
+```python
+class AgentState(TypedDict):
+    task:           str   # ← set once, never changes
+    research_notes: str   # ← Research Agent fills this
+    final_report:   str   # ← Writer Agent fills this
+    github_result:  str   # ← GitHub Agent fills this
+    next:           str   # ← Supervisor fills this ("research"/"writer"/"github"/"FINISH")
+```
+
+Agents **never talk to each other directly**. They only read and write to this shared state.
+
+### The Supervisor's Decision Logic
+
+| Task Contains | Supervisor Routes To |
+|--------------|---------------------|
+| "research", "find", "what is", "explain" | `research` → `writer` → `FINISH` |
+| "list files", "create branch", "show repo" | `github` → `FINISH` |
+| "save to github", "commit", "push" | `research` → `writer` → `github` → `FINISH` |
+| Vague / unclear | Defaults to `research` → `writer` → `FINISH` |
 
 ---
 
-## 🛡️ How the Pipeline Handles Failures
+## 🤖 Agent Comparison Table
 
-`main.py` has a 3-step cleaning layer between Stage 1 and Stage 2:
+| | Research Agent | Writer Agent | GitHub Agent | Supervisor |
+|--|---------------|--------------|--------------|------------|
+| **Job** | Search web, collect notes | Rewrite notes into report | Perform GitHub actions | Decide who runs next |
+| **Tools** | web_search, file_saver | file_saver only | github_tools only | None |
+| **Input** | topic string | research_notes from state | task + optional report | full state |
+| **Output** | raw notes dict | polished markdown | action result string | "next" agent name |
+| **Browses web?** | ✅ Yes | ❌ Never | ❌ Never | ❌ Never |
+| **LLM Model** | llama-3.1-8b-instant | llama-3.3-70b-versatile | llama-3.3-70b-versatile | llama-3.3-70b-versatile |
 
-```python
-# Step 1: Remove LangChain internal debug text
-# Step 2: Remove duplicate lines from repeated searches
-# Step 3: Detect agent failure messages and stop cleanly
-```
+> **The most important rule:** Never give an agent tools it doesn't need. A constrained agent is a predictable agent.
 
-If the Research Agent returns nothing or an error message, the pipeline stops with a warning — **it never crashes.**
+---
 
-**The three tests to run before calling Phase 2 done:**
+## 🍽️ The Restaurant Analogy (GitHub Agent)
 
-| Test | Input | Expected |
-|------|-------|----------|
-| ✅ Normal run | `artificial intelligence in healthcare` | Full 4-section report saved |
-| ✅ Vague topic | `dogs` | Short but valid report, no crash |
-| ✅ Empty input | Simulate `research_notes = ""` in main.py | Warning printed, no crash |
+`github_tools.py` = **the kitchen** — raw cooking functions (create file, delete branch, list files). Knows nothing about intent.
+
+`github_agent.py` = **the waiter** — reads the customer's natural language order, translates it into a kitchen ticket (JSON action), and brings back the result.
+
+The LLM is the translator: it converts `"save the report to docs/"` → `{"action": "create_or_update_file", "path": "docs/report.md", "content": "..."}`.
 
 ---
 
 ## 🌿 Git Workflow (No Conflicts Guide)
 
-### Branch Names — Use These Exactly
+### Branch Names
 
 | Member | Branch Name |
 |--------|------------|
@@ -256,79 +277,64 @@ If the Research Agent returns nothing or an error message, the pipeline stops wi
 
 ### Daily Workflow
 
-**START of day:**
 ```bash
-git checkout main
-git pull origin main
-git checkout feature/your-branch-name
-git merge main
-```
+# START of day
+git checkout main && git pull origin main
+git checkout feature/your-branch-name && git merge main
 
-**DURING the day:**
-```bash
-git add .
-git commit -m "feat: describe what you did"
-```
+# DURING the day
+git add . && git commit -m "feat: describe what you did"
 
-**END of day:**
-```bash
+# END of day
 git push origin feature/your-branch-name
 ```
-
-### Good Commit Messages
-
-| ❌ Bad | ✅ Good |
-|--------|---------|
-| `update` | `feat: add writer_agent.py with 4-section report format` |
-| `fix` | `fix: handle empty research notes in writer agent` |
-| `done` | `Phase 2: Add writer_agent.py and main.py pipeline` |
 
 ---
 
 ## 🔀 Merging Without Conflicts
 
-**Step 1 — Push your final code:**
-```bash
-git add .
-git commit -m "Phase 2: complete my part"
-git push origin feature/your-branch-name
+**Merge order (Member 1 does this):**
 ```
-
-**Step 2 — Open a Pull Request on GitHub** (yellow banner → "Compare & pull request")
-
-**Step 3 — Member 1 (Leader) merges in this order:**
-
-```
-1️⃣  Member 3's PR  →  file_saver.py    (no dependencies)
-2️⃣  Member 2's PR  →  web_search.py
-3️⃣  Member 1's PR  →  research_agent.py, writer_agent.py, main.py
+1️⃣  Member 3 PR  →  file_saver.py, github_tools.py   (no dependencies)
+2️⃣  Member 2 PR  →  web_search.py
+3️⃣  Member 1 PR  →  all agents, graph/, main.py       (depends on both)
 ```
 
 ---
 
-## 📅 Phase 2 Weekly Schedule
+## 📅 Phase 3 Weekly Schedule
 
 | Day | All 3 Together | Member 1 | Member 2 | Member 3 |
 |-----|---------------|----------|----------|----------|
-| **Day 1** | Review Phase 1, plan Phase 2 | Read Phase 2 spec | — | — |
-| **Day 2** | — | Build `writer_agent.py` skeleton | Test `web_search.py` | Add `save_to_file()` to `file_saver.py` |
-| **Day 3** | — | Complete `writer_agent.py` logic | — | Test `save_to_file()` works |
-| **Day 4** | Connect all pieces | Build `main.py` pipeline | Test search returns full content | Test both save functions |
-| **Day 5** | Run all 3 tests together | Run full pipeline | Fix any search bugs | Check both output files look good |
+| **Day 1** | Read LangGraph concepts, install deps | Study State + Supervisor logic | — | Build `github_tools.py` skeleton |
+| **Day 2** | — | Build `graph/state.py` | — | Complete `github_tools.py` + test |
+| **Day 3** | — | Build `manager_agent.py` (Supervisor) | Test web_search edge cases | Build `github_agent.py` |
+| **Day 4** | — | Build `graph/pipeline_graph.py` | — | Test `github_agent.py` standalone |
+| **Day 5** | Connect all pieces | Update `main.py` | — | — |
+| **Day 6–7** | Run all 5 tests together | Fix routing bugs | — | Fix GitHub errors |
+
+**5 tests before Phase 3 is done:**
+| Test | Input | Expected |
+|------|-------|----------|
+| 1 | `Research the history of the internet` | Research + Writer run, report saved |
+| 2 | `List all files in the agents folder` | GitHub runs, shows file list |
+| 3 | `Research quantum computing and save to docs/quantum.md` | Research → Writer → GitHub |
+| 4 | `Do something useful` | Defaults to research gracefully, no crash |
+| 5 | `Create a file that already exists` | GitHub Agent returns error message, no crash |
 
 ---
 
-## 💡 Lessons Learned (Phase 2)
+## 💡 Lessons Learned
 
-| Lesson | What It Taught Us |
-|--------|------------------|
-| **Understand before building** | Mental models first. Jumping to code without understanding ReAct causes confusion. |
-| **Fix at source** | When research_agent returned a dict, fixing it in main.py was a workaround. Real fix is at source. |
-| **Model size matters for ReAct** | Small fast models (8b) often fail strict ReAct format. Use 70b or mixtral for agents. |
-| **Rate limits are real** | Free tier APIs have token-per-minute limits. Agents make multiple calls. Plan for retries. |
-| **Validate agent output** | Never blindly pass agent output to the next step. Always check: is this research or an error? |
-| **One file per agent** | Keeping each agent in its own file with clear ownership prevents confusion and merge conflicts. |
-| **Two outputs not one** | Research notes and final report are different things. Save them separately with different names. |
+| Phase | Lesson | What It Taught Us |
+|-------|--------|------------------|
+| Phase 1 | Understand before building | Mental models first. Jumping to code without understanding ReAct causes confusion. |
+| Phase 2 | Fix at source | When research_agent returned a dict, fixing in main.py was a workaround. Real fix is at source. |
+| Phase 2 | Model size matters | Small models (8b) fail strict ReAct format. Use 70b for agents that need structured output. |
+| Phase 2 | Validate agent output | Never blindly pass agent output to the next step. Always check: is this research or an error? |
+| Phase 3 | Supervisor does NO work | The moment the Supervisor tries to also research or write, the architecture collapses. |
+| Phase 3 | State between nodes | Always print state after each node during testing. Silent failures are the hardest to debug. |
+| Phase 3 | One tool per agent | Never give an agent tools it doesn't need. Constrained = predictable. |
 
 ---
 
@@ -336,14 +342,15 @@ git push origin feature/your-branch-name
 
 | Problem | Likely Cause | Fix |
 |---------|-------------|-----|
-| `ModuleNotFoundError` | Wrong import path | Run from root folder, not inside `agents/` |
-| API key not working | `.env` formatting issue | Check no spaces around `=`. Restart Codespaces. |
-| Report is empty | LLM returned blank | Print `response.content` before saving to debug |
-| Report has hallucinated facts | Writer went off-script | Check system prompt has "do not search" rule |
-| File not saved | `outputs/` folder issue | Check `file_saver.py` has `os.makedirs(exist_ok=True)` |
-| `dict object has no attribute strip` | research_agent returns dict, not string | Extract with `research_result["report"]` |
-| `git push` rejected | Need to sync first | Run `git pull origin main` then push again |
-| Codespace timed out | Inactivity | GitHub → Codespaces → Resume your codespace |
+| `ModuleNotFoundError: langgraph` | Not installed | `pip install langgraph` |
+| Supervisor loops forever | `FINISH` condition missing or unclear | Check Supervisor prompt — ensure "FINISH" rule is explicit |
+| `GitHub 401 Unauthorized` | Token wrong or expired | Regenerate token on GitHub, update `.env` |
+| `GitHub 404 Not Found` | Wrong repo name | Check `GITHUB_REPO=username/reponame` exactly in `.env` |
+| State field is `None` | Agent didn't update state | Check agent node returns `{**state, "field": value}` |
+| Writer runs before research | Conditional edge wrong | Check routing logic in `pipeline_graph.py` |
+| `dict object has no attribute strip` | research_agent returns dict | Extract with `result["report"]` in the node wrapper |
+| LLM returns non-JSON for GitHub | Model formatting issue | Prompt says "ONLY JSON" — also strip code fences before parsing |
+| `git push` rejected | Need to sync first | `git pull origin main` then push again |
 
 ---
 
@@ -365,28 +372,30 @@ git push origin feature/your-branch-name
 
 | Tool | Purpose | Free? |
 |------|---------|-------|
-| [Groq](https://console.groq.com) | Ultra-fast LLaMA3 AI — the "brain" of both agents | ✅ |
+| [Groq](https://console.groq.com) | Ultra-fast LLaMA3 AI for all three agents | ✅ |
 | [Tavily](https://tavily.com) | Web search built for AI agents | ✅ |
-| [LangChain](https://langchain.com) | Framework connecting AI + tools + agents | ✅ |
-| [Streamlit](https://streamlit.io) | Turns script into a web app | ✅ |
-| [python-dotenv](https://pypi.org/project/python-dotenv/) | Safe API key loading from `.env` | ✅ |
+| [LangChain](https://langchain.com) | Framework connecting LLM + tools | ✅ |
+| [LangGraph](https://langchain-ai.github.io/langgraph/) | Graph-based multi-agent orchestration | ✅ |
+| [PyGithub](https://pygithub.readthedocs.io/) | Python wrapper for GitHub API | ✅ |
+| [Streamlit](https://streamlit.io) | Web UI for research agent | ✅ |
+| [python-dotenv](https://pypi.org/project/python-dotenv/) | Safe API key loading | ✅ |
 
 ---
 
-## ➡️ What's Next — Phase 3
+## ➡️ What's Next — Phase 4
 
-In Phase 3, you will build the **Manager Agent** — an orchestrator that:
-- Receives the task from the user
-- Decides which agent to call and in what order
-- Passes data between agents automatically
-- Returns the final result
+Phase 4 is the **UI layer** — a Streamlit chat interface where:
+- User types naturally and sees the pipeline run in real time
+- Live status updates show which agent is running
+- Rendered report preview appears on the page
+- Download button for the final `.md` file
 
-The tool for this is **LangGraph** — a framework built on LangChain for building agent graphs and orchestration flows.
+The backend (all agents + graph) is already done. Phase 4 is putting a clean face on it.
 
-📖 Start reading: [LangGraph docs](https://langchain-ai.github.io/langgraph/)
+📖 Start reading: [Streamlit docs](https://docs.streamlit.io) | [st.status](https://docs.streamlit.io/library/api-reference/status)
 
 ---
 
 <p align="center">
-  <i>AI Agent Project — Phase 1 & 2 | Sequential Multi-Agent Pipeline</i>
+  <i>AI Agent Project — Phase 1, 2 & 3 | LangGraph Multi-Agent Pipeline</i>
 </p>
