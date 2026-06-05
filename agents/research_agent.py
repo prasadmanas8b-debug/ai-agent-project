@@ -201,9 +201,8 @@ except ImportError as e:
 # ─────────────────────────────────────────────────────────────────────────────
 from langchain_groq import ChatGroq
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.tools import tool
-from langchain_core.prompts import PromptTemplate
+from langchain_core.tools import tool
+from langgraph.prebuilt import create_react_agent
 
 # ═════════════════════════════════════════════════════════════════════════════
 # SECTION 9: FALLBACK FUNCTIONS
@@ -347,12 +346,12 @@ def _create_tools() -> list:
 #   This prompt enforces a specific THOUGHT → ACTION → OBSERVATION cycle.
 #   This is the "ReAct" pattern — the agent must show its reasoning at each step.
 # ═════════════════════════════════════════════════════════════════════════════
-RESEARCH_PROMPT = PromptTemplate.from_template("""
+RESEARCH_SYSTEM_PROMPT = """
 You are a thorough and accurate research assistant.
 
 Your job is to research a given topic and produce a well-structured markdown report.
 
-Report structure (always use this):
+Report structure (always use this exact format):
 
 ## Overview
 A 2-3 sentence introduction to the topic.
@@ -366,33 +365,13 @@ More in-depth information, examples, or use cases.
 ## Conclusion
 A brief summary of what was found.
 
-You have access to these tools:
-{tools}
-
-Tool names available: {tool_names}
-
-Use this EXACT format for every step:
-
-Question: the research topic
-Thought: what I need to find out
-Action: [tool name from {tool_names}]
-Action Input: my search query
-Observation: the search results
-... (repeat as needed — search 2-3 times for different aspects)
-Thought: I now have enough information to write the full report
-Final Answer: [complete markdown research report]
-
-Important rules:
-- Always search at least 2 times with different queries before writing the report
+Rules:
+- Always search at least 2 times with DIFFERENT queries before writing the report
 - Use specific search queries, not just the topic title
 - Write the report in clean markdown format
 - If search returns no results, try a different query
-
-Begin!
-
-Question: {input}
-Thought: {agent_scratchpad}
-""")
+- After gathering enough information, write the complete markdown report
+"""
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -445,39 +424,25 @@ def run_research_agent(topic: str) -> dict:
     # ── STEP 2: Create the tools ─────────────────────────────────────────
     tools = _create_tools()
 
-    # ── STEP 3: Build the ReAct Agent ────────────────────────────────────
-    # create_react_agent() takes three ingredients and bakes them into an agent:
-    #   llm     → the thinking brain (Groq LLaMA3)
-    #   tools   → the actions it can take (web search)
-    #   prompt  → the instructions for HOW to think (our RESEARCH_PROMPT above)
+    # ── STEP 3: Build the ReAct Agent (LangGraph prebuilt) ──────────────
+    # create_react_agent is the modern stable API from langgraph.prebuilt.
+    # It replaces the old AgentExecutor + create_react_agent from langchain.agents.
+    # Takes: model (LLM), tools (list), prompt (system message string)
     agent = create_react_agent(
-        llm=llm,
-        tools=tools,
-        prompt=RESEARCH_PROMPT,
+        model  = llm,
+        tools  = tools,
+        prompt = RESEARCH_SYSTEM_PROMPT,
     )
 
-    # ── STEP 4: Create the Executor ───────────────────────────────────────
-    # AgentExecutor is the "manager" that actually runs the agent.
-    # Parameters explained:
-    #   agent              → the agent we just created
-    #   tools              → same tools list (executor needs this too)
-    #   verbose=True       → print every Thought/Action/Observation step
-    #   max_iterations=8   → stop after 8 rounds of searching (safety cap)
-    #   handle_parsing_errors=True → if AI output is malformed, retry instead of crash
-    executor = AgentExecutor(
-        agent=agent,
-        tools=tools,
-        verbose=True,               # Show full reasoning in terminal
-        max_iterations=8,           # Max search rounds before giving up
-        handle_parsing_errors=True, # Be forgiving with imperfect AI output
-    )
-
-    # ── STEP 5: RUN THE AGENT ─────────────────────────────────────────────
+    # ── STEP 4: RUN THE AGENT ─────────────────────────────────────────────
     print("🤖  Agent is working...\n")
-    result = executor.invoke({"input": topic})
+    result = agent.invoke({"messages": [("human", topic)]})
 
-    # result is a dict. "output" contains the agent's Final Answer text.
-    report = result.get("output", "⚠️ No report was generated.")
+    # result["messages"] is a list. The last message is the agent's final answer.
+    last_message = result["messages"][-1]
+    report = last_message.content if hasattr(last_message, "content") else str(last_message)
+    if not report:
+        report = "⚠️ No report was generated."
 
     # ── STEP 6: SAVE THE REPORT ───────────────────────────────────────────
     if SAVER_READY:
@@ -597,3 +562,4 @@ if __name__ == "__main__":
     print("\n--- REPORT PREVIEW (first 600 chars) ---")
     print(result["report"][:600] + "\n...")
     print(f"\n📁  Full report: {result['saved_to']}")
+
