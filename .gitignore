@@ -1,36 +1,69 @@
-# Environment secrets (NEVER push)
-.env
-*.env
-
-# Python cache
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
 *.py[cod]
-*.pyo
-*.pyd
-.Python
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
 
-# Virtual environment
+# ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 .venv/
 env/
+.env/
 
-# Jupyter notebooks checkpoints
-.ipynb_checkpoints/
+# ── Environment & secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
 
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
+# ── Outputs & uploads ─────────────────────────────────────────────────────────
+outputs/
+uploads/
+!outputs/.gitkeep
+!uploads/.gitkeep
 
-# IDE files
+# ── Database files ────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
+# ── pytest ────────────────────────────────────────────────────────────────────
+.pytest_cache/
+.cache/
+
+# ── IDEs ──────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
-
-# System files
+*.swp
+*.swo
 .DS_Store
-Thumbs.db
 
-# Logs
-*.logoutputs/*
-!outputs/.gitkeep
+# ── Docker ────────────────────────────────────────────────────────────────────
+.dockerignore
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Node (frontend) ───────────────────────────────────────────────────────────
+node_modules/
+.next/
+frontend/dist/
