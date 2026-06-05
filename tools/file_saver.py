@@ -1,18 +1,66 @@
 """
 tools/file_saver.py — Member 3 owns this file
-AI Agent Project | Phase 1
+AI Agent Project | Phase 1 + Phase 2 update
 
-Provides save_report() — called by research_agent.py to save the final report.
-Saves reports to the outputs/ folder as markdown files.
+Provides:
+  save_report()    — Phase 1: saves report from research_agent (topic-based naming)
+  save_to_file()   — Phase 2 new: saves any content with a custom filename
+  save_report_txt()— saves as plain .txt backup
+  list_reports()   — lists all saved reports in outputs/
+
+Phase 2 change: Added save_to_file() with filename + folder parameters
+so each agent can name its output file independently.
 """
 import os
 import re
 from datetime import datetime
 
-# ── Main function used by research_agent.py ──────────────────────────────────
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 2 — NEW FUNCTION: save_to_file()
+# Added in Phase 2 so Writer Agent can save with a custom filename.
+# Used by: writer_agent.py
+# ══════════════════════════════════════════════════════════════════════════════
+def save_to_file(content: str, filename: str = "output.txt", folder: str = "outputs") -> str:
+    """
+    Saves content to a file inside the outputs/ folder.
+    Creates the folder if it doesn't exist.
+    Returns the full filepath.
+
+    This is the Phase 2 upgrade — a general-purpose saver that accepts
+    any filename. Agents use this to name their outputs meaningfully.
+
+    Args:
+        content  (str): The text content to write to the file.
+        filename (str): The filename to use. Default: "output.txt"
+                        Example: "final_report_quantum_computing.md"
+        folder   (str): Subfolder inside the project to save in. Default: "outputs"
+
+    Returns:
+        str: The full path to the saved file.
+
+    Examples:
+        save_to_file("# My Report\n...", "final_report_ai.md")
+        save_to_file("raw notes here", "research_notes_ai.txt")
+    """
+    os.makedirs(folder, exist_ok=True)
+    filepath = os.path.join(folder, filename)
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"[File Saver] Saved to: {filepath}")
+    return filepath
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phase 1 — EXISTING FUNCTION: save_report()
+# Used by: research_agent.py (unchanged from Phase 1)
+# ══════════════════════════════════════════════════════════════════════════════
 def save_report(topic: str, content: str, output_dir: str = "outputs") -> str:
     """
     Save a research report to the outputs/ folder as a markdown file.
+    (Phase 1 function — unchanged)
 
     Args:
         topic      (str): The research topic (used to name the file).
@@ -21,24 +69,16 @@ def save_report(topic: str, content: str, output_dir: str = "outputs") -> str:
 
     Returns:
         str: The full path to the saved file.
-
-    Example:
-        path = save_report("LangChain agents", "## Summary\n...")
-        print(f"Saved to: {path}")
     """
-    # ── Create outputs/ folder if it doesn't exist ───────────────────────────
     os.makedirs(output_dir, exist_ok=True)
 
-    # ── Build a clean filename from the topic ────────────────────────────────
     safe_name = _make_safe_filename(topic)
     filename  = f"report_{safe_name}.md"
     filepath  = os.path.join(output_dir, filename)
 
-    # ── Build the full markdown file content ─────────────────────────────────
     timestamp    = datetime.now().strftime("%Y-%m-%d %H:%M")
     full_content = _build_markdown(topic, content, timestamp)
 
-    # ── Write to file ────────────────────────────────────────────────────────
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(full_content)
 
@@ -72,13 +112,15 @@ def list_reports(output_dir: str = "outputs") -> list[str]:
     Returns a list of all saved report filenames in the outputs/ folder.
 
     Returns:
-        list of str: filenames like ['report_langchain_agents.md', ...]
+        list of str: filenames like ['report_langchain_agents.md',
+                                      'final_report_langchain_agents.md']
     """
     if not os.path.exists(output_dir):
         return []
     files = [
         f for f in os.listdir(output_dir)
-        if f.startswith("report_") and (f.endswith(".md") or f.endswith(".txt"))
+        if (f.startswith("report_") or f.startswith("final_report_")) and
+           (f.endswith(".md") or f.endswith(".txt"))
     ]
     return sorted(files)
 
@@ -90,10 +132,10 @@ def _make_safe_filename(topic: str) -> str:
     Example: "LangChain agents & tools" → "langchain_agents__tools"
     """
     safe = topic.lower()
-    safe = re.sub(r"[^\w\s-]", "", safe)     # remove special chars
-    safe = re.sub(r"[\s-]+",   "_", safe)    # spaces → underscores
+    safe = re.sub(r"[^\w\s-]", "", safe)
+    safe = re.sub(r"[\s-]+",   "_", safe)
     safe = safe.strip("_")
-    return safe[:60]                          # max 60 chars
+    return safe[:60]
 
 
 # ── Helper: build the full markdown report ────────────────────────────────────
@@ -117,11 +159,20 @@ def _build_markdown(topic: str, content: str, timestamp: str) -> str:
 
 # ── Quick test ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("Testing file_saver.py...\n")
+    print("Testing file_saver.py (Phase 2 version)...\n")
 
-    test_path = save_report(
-        topic   = "LangChain agents",
-        content = "## Overview\n\nLangChain is a framework for building LLM apps.\n\n## Key Points\n- Supports agents\n- Works with many LLMs\n"
+    # Test Phase 2 new function
+    path1 = save_to_file(
+        content="## Final Report\n\nThis is a test final report.",
+        filename="final_report_test_topic.md"
     )
-    print(f"\n✅ Saved to: {test_path}")
+    print(f"✅ save_to_file → {path1}")
+
+    # Test Phase 1 original function
+    path2 = save_report(
+        topic   = "LangChain agents",
+        content = "## Overview\n\nLangChain is a framework for LLM apps.\n"
+    )
+    print(f"✅ save_report → {path2}")
+
     print(f"\n📂 All saved reports: {list_reports()}")
