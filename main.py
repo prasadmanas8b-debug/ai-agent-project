@@ -1,186 +1,108 @@
 """
-main.py — Phase 2 Pipeline Runner
+main.py — Phase 3 Pipeline Runner
 AI Agent Project | Root folder
 
-This file connects the Research Agent and Writer Agent into a sequential pipeline.
+Phase 3 upgrade: The hardcoded pipeline from Phase 2 is replaced with
+a LangGraph-powered graph. One line to run everything.
 
-Pipeline:
-    User types a topic
-         ↓
-    [ Stage 1 ] research_agent.py  →  searches web → returns research_notes
-         ↓  (output of Stage 1 becomes input of Stage 2)
-    [ Stage 2 ] writer_agent.py    →  rewrites notes → saves final_report_{topic}.md
-         ↓
-    outputs/
-      report_{topic}.md            ←  raw research    (Research Agent)
-      final_report_{topic}.md      ←  polished report (Writer Agent)
+Phase 2 (hardcoded):
+    research_notes = run_research_agent(topic)
+    final_report   = run_writer_agent(research_notes, topic)
+
+Phase 3 (graph-driven):
+    result = graph.invoke({"task": user_input, ...})
+
+The graph handles:
+  - Which agents to run (and in what order)
+  - Passing data between agents via shared state
+  - Deciding when the task is done (FINISH)
+  - Routing different task types to different agents
 
 How to run:
     python main.py
 
-Key concepts demonstrated:
-    - Sequential pipeline: Agent A output → Agent B input
-    - Input validation: never pass raw/dirty output between agents
-    - Graceful failure: bad input stops the pipeline cleanly, no crash
-    - Separation of concerns: each agent does exactly one job
+Supported task types:
+  "Research the history of AI"                        → Research + Write
+  "List files in the agents folder"                   → GitHub only
+  "Research quantum computing and save to GitHub"     → Research + Write + GitHub
+  "Create a branch called feature/phase-4"            → GitHub only
 """
 
-import re
 import sys
 import os
 
-# Fix import path — must be run from project root
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
-from agents.research_agent import run_research_agent
-from agents.writer_agent   import run_writer_agent
+from dotenv import load_dotenv
+load_dotenv()
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SECTION 1: INPUT CLEANING
-# Never blindly pass research agent output to the writer.
-# Always clean and validate first.
-# ─────────────────────────────────────────────────────────────────────────────
-def _clean_research_notes(raw: str) -> str:
-    """
-    Cleans raw output from the Research Agent before passing to Writer Agent.
-
-    Problems this solves:
-      1. LangChain sometimes appends internal debug text ("Invalid Format:...")
-      2. The agent occasionally duplicates lines when searching multiple times
-      3. Error messages ("agent stopped due to iteration limit") must be caught
-
-    Args:
-        raw (str): Raw string output from research_agent.
-
-    Returns:
-        str: Cleaned string, or empty string if it looks like an error.
-    """
-    # Step 1: Remove LangChain internal debug / error text
-    # re.DOTALL makes . match newlines too, so multi-line blocks are caught
-    cleaned = re.sub(r'Invalid Format:.*?(?=##|\Z)', '', raw, flags=re.DOTALL)
-    cleaned = re.sub(r'Agent stopped.*?(?=##|\Z)', '', cleaned, flags=re.DOTALL)
-
-    # Step 2: Remove duplicate lines (agent sometimes repeats search results)
-    lines = cleaned.split('\n')
-    seen, deduped = set(), []
-    for line in lines:
-        key = line.strip()
-        if key not in seen or key == '':
-            deduped.append(line)
-            seen.add(key)
-    cleaned = '\n'.join(deduped)
-
-    # Step 3: Safety check — if the output is actually an agent failure message,
-    # return empty string so the pipeline stops cleanly
-    failed_keywords = ['iteration limit', 'time limit', 'agent stopped', 'could not complete']
-    if any(kw in cleaned.lower() for kw in failed_keywords):
-        print("[Pipeline] ⚠️  Research notes contain agent failure message. Stopping pipeline.")
-        return ''
-
-    return cleaned.strip()
-
+from graph.pipeline_graph import build_graph
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SECTION 2: MAIN PIPELINE — run_pipeline()
-# ─────────────────────────────────────────────────────────────────────────────
-def run_pipeline(topic: str) -> str:
-    """
-    Full sequential pipeline: Research → Clean → Write → Save
-
-    Stage 1: Research Agent searches the web and collects raw notes.
-    Stage 2: Writer Agent reads those notes and produces a polished report.
-
-    Args:
-        topic (str): The research topic entered by the user.
-
-    Returns:
-        str: The final polished report as a markdown string.
-             Empty string if pipeline failed at any stage.
-    """
-    print(f"\n{'='*55}")
-    print(f"  PIPELINE STARTED")
-    print(f"  Topic: {topic}")
-    print(f"{'='*55}\n")
-
-    # ── STAGE 1: RESEARCH ─────────────────────────────────────────────────
-    print("[ STAGE 1 ] Running Research Agent...\n")
-
-    # research_agent returns a dict: {topic, report, saved_to}
-    research_result = run_research_agent(topic)
-
-    # Extract the report string from the dict
-    # (Lesson learned: research_agent returns dict, not raw string)
-    if isinstance(research_result, dict):
-        raw_notes = research_result.get("report", "")
-    else:
-        raw_notes = str(research_result)  # fallback if it ever returns a string
-
-    # Validate: did we get anything?
-    if not raw_notes:
-        print("[ PIPELINE ] ❌ Research Agent returned nothing. Stopping.")
-        return ""
-
-    print("\n[ STAGE 1 ] ✅ Research complete.\n")
-    print("-" * 55)
-
-    # ── CLEAN: Sanitise research notes before passing to writer ───────────
-    print("\n[ PIPELINE ] Cleaning research notes...")
-    research_notes = _clean_research_notes(raw_notes)
-
-    if not research_notes:
-        print("[ PIPELINE ] ❌ Research notes were empty after cleaning. Stopping.")
-        return ""
-
-    print(f"[ PIPELINE ] Notes ready — {len(research_notes)} characters.\n")
-    print("-" * 55)
-
-    # ── STAGE 2: WRITE ────────────────────────────────────────────────────
-    print("\n[ STAGE 2 ] Running Writer Agent...\n")
-
-    final_report = run_writer_agent(
-        research_notes=research_notes,
-        topic=topic
-    )
-
-    # Check if writer returned an error string instead of a real report
-    if final_report.startswith("Error:"):
-        print(f"[ PIPELINE ] ❌ Writer Agent failed: {final_report}")
-        return ""
-
-    print("\n[ STAGE 2 ] ✅ Report written.\n")
-    print("=" * 55)
-    print("  PIPELINE COMPLETE")
-    print("  Two files saved in outputs/:")
-    print(f"    report_{{topic}}.md       ← raw research notes")
-    print(f"    final_report_{{topic}}.md ← polished final report")
-    print("=" * 55)
-
-    return final_report
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SECTION 3: ENTRY POINT
+# ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
 
-    print("\n╔═══════════════════════════════════════╗")
-    print("║  AI Research Pipeline — Phase 2       ║")
-    print("║  Research Agent → Writer Agent        ║")
-    print("╚═══════════════════════════════════════╝")
+    print("\n╔════════════════════════════════════════════════════╗")
+    print("║   AI Agent Pipeline — Phase 3                      ║")
+    print("║   Powered by LangGraph + Groq + Tavily             ║")
+    print("╠════════════════════════════════════════════════════╣")
+    print("║  Examples:                                         ║")
+    print("║  • Research the history of the internet            ║")
+    print("║  • List files in the agents folder                 ║")
+    print("║  • Research AI in healthcare and save to GitHub    ║")
+    print("║  • Create a branch called feature/phase-4          ║")
+    print("╚════════════════════════════════════════════════════╝\n")
 
-    topic = input("\nEnter a topic to research: ").strip()
+    user_input = input("What do you want to do? ").strip()
 
-    if not topic:
-        print("No topic entered. Exiting.")
+    if not user_input:
+        print("No input entered. Exiting.")
         sys.exit(0)
 
-    report = run_pipeline(topic)
+    # ── Build the graph ───────────────────────────────────────────────────
+    graph = build_graph()
 
-    if report:
-        print("\n--- FINAL REPORT PREVIEW (first 1000 chars) ---\n")
-        print(report[:1000])
+    # ── Initial state — all agent fields start empty ──────────────────────
+    # The Supervisor reads the task and fills "next" to kick things off.
+    initial_state = {
+        "task":           user_input,
+        "research_notes": "",
+        "final_report":   "",
+        "github_result":  "",
+        "next":           "",
+    }
+
+    print(f"\n{'='*55}")
+    print(f"  PIPELINE STARTED")
+    print(f"  Task: {user_input}")
+    print(f"{'='*55}\n")
+
+    # ── Run the graph ─────────────────────────────────────────────────────
+    # graph.invoke() runs the full pipeline — Supervisor decides everything
+    try:
+        result = graph.invoke(initial_state)
+    except Exception as e:
+        print(f"\n❌ Pipeline error: {e}")
+        sys.exit(1)
+
+    # ── Display results ───────────────────────────────────────────────────
+    print(f"\n{'='*55}")
+    print("  PIPELINE COMPLETE — RESULTS")
+    print(f"{'='*55}\n")
+
+    if result.get("research_notes"):
+        print(f"📚 Research:   ✅ Collected ({len(result['research_notes'])} chars)")
+
+    if result.get("final_report"):
+        print(f"📝 Report:     ✅ Written ({len(result['final_report'])} chars)")
+        print(f"\n--- REPORT PREVIEW (first 800 chars) ---\n")
+        print(result["final_report"][:800])
         print("\n[Full report saved in outputs/ folder]")
-    else:
-        print("\n[ PIPELINE ] No report was generated. Check the logs above for errors.")
+
+    if result.get("github_result"):
+        print(f"\n🐙 GitHub:     {result['github_result']}")
+
+    if not any([result.get("research_notes"), result.get("final_report"), result.get("github_result")]):
+        print("⚠️  No output was generated. Check the logs above for errors.")
