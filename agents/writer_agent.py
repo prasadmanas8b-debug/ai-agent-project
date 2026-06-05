@@ -71,6 +71,8 @@ You receive raw research notes on a topic and your job is to:
 2. Always include these FOUR sections with these EXACT headings:
    ## Overview
    ## Key Findings
+   ##Facts
+   ##Interesting to know
    ## Detailed Analysis
    ## Conclusion
 3. Use clear headings and bullet points where helpful
