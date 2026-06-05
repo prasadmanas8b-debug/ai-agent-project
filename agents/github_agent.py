@@ -42,7 +42,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from langchain_groq import ChatGroq
-from langchain.schema import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 
 from tools.github_tools import (
     create_file,
@@ -263,3 +263,4 @@ if __name__ == "__main__":
     print(r2)
 
     print("\n✅ github_agent.py tests complete!")
+
